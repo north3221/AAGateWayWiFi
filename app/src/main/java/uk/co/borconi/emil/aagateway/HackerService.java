@@ -19,7 +19,9 @@ import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.InputStreamReader;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -136,12 +138,6 @@ public class HackerService extends Service {
         return START_STICKY;
     }
 
-    public String intToIp(int addr) {
-        return  ((addr & 0xFF) + "." +
-                ((addr >>>= 8) & 0xFF) + "." +
-                ((addr >>>= 8) & 0xFF) + "." +
-                ((addr >>>= 8) & 0xFF));
-    }
 
     class tcppollthread implements Runnable {
         public void run() {
@@ -150,13 +146,29 @@ public class HackerService extends Service {
                 {
                     try {
 
-                ConnectivityManager cm = (ConnectivityManager) getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
                 if (!localCompleted) {
-                    WifiManager wifii = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-                    DhcpInfo d = wifii.getDhcpInfo();
-
-                    Log.d("HU", "Connecting to phone...");
-                    socket = new Socket(intToIp(d.gateway), 5277);
+                    //get the address of the first and only client connected to this hotspot
+                    String[] command = { "ip", "neigh", "show", "dev", "wlan0", "nud", "reachable" };
+                    Process p = Runtime.getRuntime().exec(command);
+                    BufferedReader br =  new BufferedReader(
+                                new InputStreamReader(p.getInputStream()));
+                    String line = br.readLine();
+                    if (line == null) {
+                          //no station connected
+                          Log.e("HU", "No station connected");
+                          stopSelf();
+                          break;
+                    }
+                    Log.d("HU", "ip neigh output " + line);
+                    String[] splitted = line.split(" +");
+                    if ((splitted == null) || (splitted.length < 1)) {
+                          //no address
+                          Log.e("HU", "No address in ip neigh output");
+                          stopSelf();
+                          break;
+                    }
+                    Log.d("HU", "Connecting to phone "+splitted[0]);
+                    socket = new Socket(splitted[0], 5277);
                     socketoutput = socket.getOutputStream();
                     socketinput =  new DataInputStream(socket.getInputStream());
                     socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
