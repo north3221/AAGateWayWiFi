@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.InetAddress;
 import java.util.Arrays;
 
 
@@ -148,27 +149,34 @@ public class HackerService extends Service {
 
                 if (!localCompleted) {
                     //get the address of the first and only client connected to this hotspot
-                    String[] command = { "ip", "neigh", "show", "dev", "wlan0", "nud", "reachable" };
+                    String[] command = { "ip", "neigh", "show", "dev", "wlan0" };
                     Process p = Runtime.getRuntime().exec(command);
                     BufferedReader br =  new BufferedReader(
                                 new InputStreamReader(p.getInputStream()));
-                    String line = br.readLine();
-                    if (line == null) {
-                          //no station connected
-                          Log.e("HU", "No station connected");
+                    String line;
+                    String phoneaddr = null;
+                    while ((line = br.readLine()) != null ) {
+                          Log.d("HU", "ip neigh output " + line);
+                          String[] splitted = line.split(" +");
+                          if ((splitted == null) || (splitted.length < 1)) {
+                            Log.d("HU", "not splitted?!");
+                            continue;
+                          }
+                          if (InetAddress.getByName(splitted[0]).isReachable(300)) {
+                             Log.d("HU", "reachable "+splitted[0]);
+                             phoneaddr = splitted[0];
+                             break;
+                          }
+                          Log.d("HU", "not reachable "+splitted[0]);
+                    }
+                    if (phoneaddr == null) {
+                          //no address found
+                          Log.e("HU", "No active station found");
                           stopSelf();
                           break;
                     }
-                    Log.d("HU", "ip neigh output " + line);
-                    String[] splitted = line.split(" +");
-                    if ((splitted == null) || (splitted.length < 1)) {
-                          //no address
-                          Log.e("HU", "No address in ip neigh output");
-                          stopSelf();
-                          break;
-                    }
-                    Log.d("HU", "Connecting to phone "+splitted[0]);
-                    socket = new Socket(splitted[0], 5277);
+                    Log.d("HU", "Connecting to phone "+phoneaddr);
+                    socket = new Socket(phoneaddr, 5277);
                     socketoutput = socket.getOutputStream();
                     socketinput =  new DataInputStream(socket.getInputStream());
                     socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
