@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 
 
@@ -111,7 +112,7 @@ public class HackerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Log.d("AAGateWay","Service Started");
+        Log.d(TAG,"Service Started");
         super.onStartCommand(intent, flags, startId);
         mAccessory = (UsbAccessory) intent.getParcelableExtra("accessory");
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
@@ -142,6 +143,7 @@ public class HackerService extends Service {
 
     class tcppollthread implements Runnable {
         public void run() {
+            Log.d(TAG,"tcp - run");
             Looper.prepare();
                 while (running)
                 {
@@ -156,46 +158,52 @@ public class HackerService extends Service {
                     String line;
                     String phoneaddr = null;
                     while ((line = br.readLine()) != null ) {
-                          Log.d("HU", "ip neigh output " + line);
+                          Log.d(TAG, "tcp - ip neigh output " + line);
                           String[] splitted = line.split(" +");
                           if ((splitted == null) || (splitted.length < 1)) {
-                            Log.d("HU", "not splitted?!");
+                            Log.d(TAG, "tcp - not splitted?!");
                             continue;
                           }
                           if (InetAddress.getByName(splitted[0]).isReachable(300)) {
-                             Log.d("HU", "reachable "+splitted[0]);
+                             Log.d(TAG, "tcp - reachable "+splitted[0]);
                              phoneaddr = splitted[0];
                              break;
                           }
-                          Log.d("HU", "not reachable "+splitted[0]);
+                          Log.d(TAG, "tcp - not reachable "+splitted[0]);
                     }
                     if (phoneaddr == null) {
                           //no address found
-                          Log.e("HU", "No active station found");
+                          Log.e(TAG, "tcp - no active station found");
+                          running = false;
                           stopSelf();
                           break;
                     }
-                    Log.d("HU", "Connecting to phone "+phoneaddr);
-                    socket = new Socket(phoneaddr, 5277);
+                    Log.d(TAG, "tcp - connecting to phone "+phoneaddr);
+                    socket = new Socket();
+                    socket.setSoTimeout(2000);
+                    socket.connect(new InetSocketAddress(phoneaddr, 5277), 500);
+                    Log.d(TAG, "tcp - connected");
                     socketoutput = socket.getOutputStream();
                     socketinput =  new DataInputStream(socket.getInputStream());
                     socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
                     socketoutput.flush();
-                    socketinput.read(new byte[12]);
+                    byte[] recv = new byte[12];
+                    socketinput.read(recv);
+                    Log.d(TAG, "tcp - recv from phone "+bytesToHex(recv));
                     localCompleted = true;
                 }
-                while (!usbCompleted)
+                while (!usbCompleted && running)
                 {
                     Thread.sleep(10);
                 }
-
+                if (running)
                     getLocalmessage(false);
 
                 }
                     catch (Exception e) {
-                        Log.e("AAGateWay",e.getMessage());
-                        if (connectionOK) //Only stop in case of error after initial connection.
-                            stopSelf();
+                        Log.e(TAG,"tcp - "+e.getMessage());
+                        running = false;
+                        stopSelf();
                     }
             }
 
@@ -208,7 +216,7 @@ public class HackerService extends Service {
 
         public void run() {
 
-            Log.d("USB","Runnable run");
+            Log.d(TAG,"usb - run");
 
             Looper.prepare();
 
@@ -224,21 +232,21 @@ public class HackerService extends Service {
                     //tcpreader.join();
                     usbCompleted = true;
                 }
-                while (!localCompleted) {
-                    Log.d("HU", "Waiting for local");
+                if (!localCompleted)
+                  Log.d(TAG, "usb - waiting for local");
+                while (!localCompleted && running) {
                     Thread.sleep(100);
                 }
-
+                if (running) {
                     x = phoneInputStream.read(buf);
                     processCarMessage(Arrays.copyOf(buf, x));
+                    }
                 }
                 catch (Exception e)
                 {
-                    Log.e(TAG,"Error reading: " + e.getMessage());
-                    if (connectionOK) {
-                        running = false;
-                        stopSelf();
-                    }
+                    Log.e(TAG,"usb - " + e.getMessage());
+                    running = false;
+                    stopSelf();
                 }
 
             }

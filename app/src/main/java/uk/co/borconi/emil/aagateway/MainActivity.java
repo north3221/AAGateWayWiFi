@@ -56,11 +56,12 @@ public class MainActivity extends AppCompatActivity {
         Intent i = new Intent(this, HackerService.class);
 
         if (paramIntent.getAction()!=null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_DETACHED")) {
-            Log.d("AAG", "USB DISCONNECTED");
+            Log.d(TAG, "USB DISCONNECTED");
             stopService(i);
             finish();
         }
         else if (paramIntent.getAction()!=null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
+            Log.d(TAG, "USB CONNECTED");
 
            // findViewById(R.id.textView).setVisibility(View.VISIBLE);
             //((TextView)findViewById(R.id.textView)).setText(paramIntent.getParcelableExtra("accessory").toString());
@@ -79,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent paramIntent)
     {
-        Log.i("MainActivity", "Got new intent: " + paramIntent);
+        Log.i(TAG, "Got new intent: " + paramIntent);
         super.onNewIntent(paramIntent);
         setIntent(paramIntent);
     }
