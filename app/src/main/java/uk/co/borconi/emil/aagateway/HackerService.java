@@ -27,6 +27,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -142,6 +145,9 @@ public class HackerService extends Service {
 
 
     class tcppollthread implements Runnable {
+        private boolean listening=true;
+        private ServerSocket serversocket=null;
+
         public void run() {
             Log.d(TAG,"tcp - run");
             Looper.prepare();
@@ -150,6 +156,11 @@ public class HackerService extends Service {
                     try {
 
                 if (!localCompleted) {
+                    if (listening) {
+                        serversocket = new ServerSocket(5288, 5);
+                        serversocket.setSoTimeout(2000);
+                        serversocket.setReuseAddress(true);
+                    }
                     //get the address of the first and only client connected to this hotspot
                     String[] command = { "ip", "neigh", "show", "dev", "wlan0" };
                     Process p = Runtime.getRuntime().exec(command);
@@ -157,6 +168,9 @@ public class HackerService extends Service {
                                 new InputStreamReader(p.getInputStream()));
                     String line;
                     String phoneaddr = null;
+                    byte[] trigbuf = new byte[] {'S'};
+                    DatagramSocket trigger = new DatagramSocket();
+                    InetAddress addr;
                     while ((line = br.readLine()) != null ) {
                           Log.d(TAG, "tcp - ip neigh output " + line);
                           String[] splitted = line.split(" +");
@@ -164,25 +178,38 @@ public class HackerService extends Service {
                             Log.d(TAG, "tcp - not splitted?!");
                             continue;
                           }
-                          if (InetAddress.getByName(splitted[0]).isReachable(300)) {
-                             Log.d(TAG, "tcp - reachable "+splitted[0]);
-                             phoneaddr = splitted[0];
-                             break;
+                          addr = InetAddress.getByName(splitted[0]);
+                          if (listening) {
+                              //send to every address, only the phone with AAStarter will try to connect back
+                              Log.d(TAG, "tcp - sending trigger to "+splitted[0]);
+                              DatagramPacket trigpacket = new DatagramPacket(trigbuf, trigbuf.length, addr, 4455);
+                              trigger.send(trigpacket);
+                          } else {
+                              if (addr.isReachable(300)) {
+                                  Log.d(TAG, "tcp - reachable "+splitted[0]);
+                                  phoneaddr = splitted[0];
+                                  break;
+                              }
+                              Log.d(TAG, "tcp - not reachable "+splitted[0]);
                           }
-                          Log.d(TAG, "tcp - not reachable "+splitted[0]);
                     }
-                    if (phoneaddr == null) {
-                          //no address found
-                          Log.e(TAG, "tcp - no active station found");
-                          running = false;
-                          stopSelf();
-                          break;
+                    if (listening) {
+                        socket = serversocket.accept();
+                        Log.d(TAG, "tcp - phone connected");
+                    } else {
+                        if (phoneaddr == null) {
+                            //no address found
+                            Log.e(TAG, "tcp - no active station found");
+                            running = false;
+                            stopSelf();
+                            break;
+                        }
+                        Log.d(TAG, "tcp - connecting to phone "+phoneaddr);
+                        socket = new Socket();
+                        socket.setSoTimeout(2000);
+                        socket.connect(new InetSocketAddress(phoneaddr, 5277), 500);
+                        Log.d(TAG, "tcp - connected");
                     }
-                    Log.d(TAG, "tcp - connecting to phone "+phoneaddr);
-                    socket = new Socket();
-                    socket.setSoTimeout(2000);
-                    socket.connect(new InetSocketAddress(phoneaddr, 5277), 500);
-                    Log.d(TAG, "tcp - connected");
                     socketoutput = socket.getOutputStream();
                     socketinput =  new DataInputStream(socket.getInputStream());
                     socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
@@ -206,6 +233,13 @@ public class HackerService extends Service {
                         stopSelf();
                     }
             }
+                if (serversocket != null) {
+                    try {
+                        serversocket.close();
+                    } catch (IOException e) {
+                        Log.e(TAG, "tcp - "+e.getMessage());
+                    }
+                }
 
 
         }
