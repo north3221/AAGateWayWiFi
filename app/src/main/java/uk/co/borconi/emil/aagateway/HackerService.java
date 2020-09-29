@@ -158,10 +158,10 @@ public class HackerService extends Service {
                 if (!localCompleted) {
                     if (listening) {
                         serversocket = new ServerSocket(5288, 5);
-                        serversocket.setSoTimeout(2000);
+                        serversocket.setSoTimeout(1000); //die early, die young
                         serversocket.setReuseAddress(true);
                     }
-                    //get the address of the first and only client connected to this hotspot
+                    //get the address of the clients connected to this hotspot
                     String[] command = { "ip", "neigh", "show", "dev", "wlan0" };
                     Process p = Runtime.getRuntime().exec(command);
                     BufferedReader br =  new BufferedReader(
@@ -196,6 +196,7 @@ public class HackerService extends Service {
                     if (listening) {
                         socket = serversocket.accept();
                         Log.d(TAG, "tcp - phone connected");
+                        socket.setSoTimeout(2000);
                     } else {
                         if (phoneaddr == null) {
                             //no address found
