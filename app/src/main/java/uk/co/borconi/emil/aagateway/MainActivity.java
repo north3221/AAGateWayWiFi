@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Looper;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -55,27 +56,24 @@ public class MainActivity extends AppCompatActivity {
         Intent paramIntent = getIntent();
         Intent i = new Intent(this, HackerService.class);
 
-        if (paramIntent.getAction()!=null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_DETACHED")) {
+        if (paramIntent.getAction() != null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_DETACHED")) {
             Log.d(TAG, "USB DISCONNECTED");
             stopService(i);
-            finish();
-        }
-        else if (paramIntent.getAction()!=null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
+        } else if (paramIntent.getAction() != null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
             Log.d(TAG, "USB CONNECTED");
 
-           // findViewById(R.id.textView).setVisibility(View.VISIBLE);
+            // findViewById(R.id.textView).setVisibility(View.VISIBLE);
             //((TextView)findViewById(R.id.textView)).setText(paramIntent.getParcelableExtra("accessory").toString());
 
 
-                if (paramIntent.getParcelableExtra("accessory") != null) {
-                    i.putExtra("accessory", paramIntent.getParcelableExtra("accessory"));
-                    startService(i);
-                    finish();
-                }
+            if (paramIntent.getParcelableExtra("accessory") != null) {
+                i.putExtra("accessory", paramIntent.getParcelableExtra("accessory"));
+                ContextCompat.startForegroundService(this,i);
+            }
 
         }
-
-}
+        finish();
+    }
 
     @Override
     protected void onNewIntent(Intent paramIntent)
