@@ -8,6 +8,7 @@ LineagesOs 17.1 (android 10).
 The MIB 2 I have is quite peculiar: when it cannot establish a connection it will briefly remove power on the usb connector and that will upset
 the apk released by Emil, hence the need to write this one.
 
+
 The steps to make it work are:
 
 1. setup a hotspot on the slave.
@@ -21,6 +22,8 @@ The steps to make it work are:
 
 It usually needs 2 o 3 (or more) tries before successfully establishing a connection.
 None of the devices needs to be rooted.
+
+**Note that if you start the app via the launcher it does nothing**, please follow the above instructions.
 
 The principle of operation is:
 
