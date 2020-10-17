@@ -1,22 +1,18 @@
 package uk.co.borconi.emil.aagateway;
 
 
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStreamReader;
-
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.ToggleButton;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -24,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private static final String TAG = "AAGateWay";
-
+    private SharedPreferences preferences;
 
 
     @Override
@@ -35,14 +31,35 @@ public class MainActivity extends AppCompatActivity {
 
         if (getIntent().getAction()!=null && getIntent().getAction().equalsIgnoreCase("android.intent.action.MAIN")) {
 
-            Button button = findViewById(R.id.button2);
+            preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+            ToggleButton listenswitch = findViewById(R.id.swListening);
+            listenswitch.setChecked(preferences.getBoolean(Preferences.LISTENING_MODE, true));
+            listenswitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    SharedPreferences.Editor editor = preferences.edit()
+                            .putBoolean(Preferences.LISTENING_MODE, isChecked);
+                    editor.commit();
+                }
+            });
+
+            ToggleButton ignoreipv6switch = findViewById(R.id.swIpMode);
+            ignoreipv6switch.setChecked(preferences.getBoolean(Preferences.IGNORE_IPV6, true));
+            ignoreipv6switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    SharedPreferences.Editor editor = preferences.edit()
+                            .putBoolean(Preferences.IGNORE_IPV6, isChecked);
+                    editor.commit();
+                }
+            });
+
+            Button button = findViewById(R.id.exitButton);
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-
                     finish();
-
-
                 }
             });
         }
@@ -59,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         if (paramIntent.getAction() != null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_DETACHED")) {
             Log.d(TAG, "USB DISCONNECTED");
             stopService(i);
+            finish();
         } else if (paramIntent.getAction() != null && paramIntent.getAction().equalsIgnoreCase("android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
             Log.d(TAG, "USB CONNECTED");
 
@@ -70,9 +88,8 @@ public class MainActivity extends AppCompatActivity {
                 i.putExtra("accessory", paramIntent.getParcelableExtra("accessory"));
                 ContextCompat.startForegroundService(this,i);
             }
-
+            finish();
         }
-        finish();
     }
 
     @Override
@@ -82,6 +99,5 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(paramIntent);
         setIntent(paramIntent);
     }
-
 
 }

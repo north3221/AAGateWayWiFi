@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
@@ -17,6 +18,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -57,14 +59,13 @@ public class HackerService extends Service {
     private FileOutputStream phoneOutputStream;
     private FileInputStream phoneInputStream;
 
-
-
-
     private static OutputStream socketoutput;
     private static DataInputStream socketinput;
     private static Socket socket;
     private boolean running=false;
     private boolean localCompleted,usbCompleted;
+    private boolean listening;
+    private boolean ignoreipv6;
     byte [] readbuffer=new byte[16384];
     private Thread tcpreader;
     private Thread usbreader;
@@ -83,6 +84,9 @@ public class HackerService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        listening=preferences.getBoolean(Preferences.LISTENING_MODE, true);
+        ignoreipv6=preferences.getBoolean(Preferences.IGNORE_IPV6, true);
         String CHANNEL_ONE_ID = "uk.co.borconi.emil.aagateway";
         String CHANNEL_ONE_NAME = "Channel One";
         NotificationChannel notificationChannel = null;
@@ -147,11 +151,18 @@ public class HackerService extends Service {
     }
 
     class tcppollthread implements Runnable {
-        private boolean listening=true;
         private ServerSocket serversocket=null;
 
         public void run() {
             Log.d(TAG,"tcp - run");
+            if (listening)
+                Log.d(TAG, "tcp - listening mode");
+            else
+                Log.d(TAG, "tcp - connection mode");
+            if (ignoreipv6)
+                Log.d(TAG, "tcp - use ipv4 addresses");
+            else
+                Log.d(TAG, "tcp - use ipv6 addresses");
 
             //connect or accept connection from the phone
             try {
@@ -177,6 +188,15 @@ public class HackerService extends Service {
                     String[] splitted = line.split(" +");
                     if ((splitted == null) || (splitted.length < 1)) {
                         Log.d(TAG, "tcp - not splitted?!");
+                        continue;
+                    }
+                    boolean isipv6 = splitted[0].contains(":");
+                    if (ignoreipv6 && isipv6) {
+                        Log.d(TAG, "tcp - IPV6, ignoring");
+                        continue;
+                    }
+                    if (!ignoreipv6 && !isipv6) {
+                        Log.d(TAG, "tcp - IPV4, ignoring");
                         continue;
                     }
                     addr = InetAddress.getByName(splitted[0]);

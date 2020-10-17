@@ -11,6 +11,7 @@ the apk released by Emil, hence the need to write this one.
 
 The steps to make it work are:
 
+1. open the app and ensure it is using the default options _LISTENING MODE_ and _USE IPV4_.
 1. setup a hotspot on the slave.
 1. configure the master to connect to said hotspot and to keep using it even if it has no Internet.
 1. Install this app on the slave and AAstarter on the master.
@@ -23,8 +24,6 @@ The steps to make it work are:
 It usually needs 2 o 3 (or more) tries before successfully establishing a connection.
 None of the devices needs to be rooted.
 
-**Note that if you start the app via the launcher it does nothing**, please follow the above instructions.
-
 The principle of operation is:
 
 * when the headunit starts it, AAGateway will send a trigger on udp port 4455 to AAstarter on the master (actually it will send it to every connected station but
@@ -32,6 +31,12 @@ The principle of operation is:
    1. only the master will reply
 * AAstarter will start Android Auto telling it to connect back to the slave.
 * When the slave successfully initializes the connection with both partners (the headunit and the slave) it will start moving data between them.
+
+If you set the _CONNECTING MODE_ option, then the app will work just like the original AAGateWay (it will connect to the headunit server that
+you'll have to manually start on the master) but with the hotspot on the slave.
+
+With the _USE IPV4_ option the app will only try ipv4 addresses to connect to the master, while with _USE IPV6_ it will only try ipv6 addresses.
+
 
 =========================
 

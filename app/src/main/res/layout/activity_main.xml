@@ -2,29 +2,52 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/parent"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:id="@+id/parent">
+    android:orientation="vertical">
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="91dp" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="20dp"
-        android:visibility="gone"
-        android:textSize="18dp"
-        android:gravity="center"
         android:autoLink="web"
-        />
+        android:gravity="center"
+        android:paddingTop="20dp"
+        android:textSize="18dp"
+        android:visibility="gone" />
+
+    <ToggleButton
+        android:id="@+id/swListening"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="mode"
+        android:textOff="connecting mode"
+        android:textOn="listening mode" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="26dp" />
+
+    <ToggleButton
+        android:id="@+id/swIpMode"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="use"
+        android:textOff="use ipv6"
+        android:textOn="use ipv4" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/exitButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:layout_gravity="center"
         android:layout_marginTop="20dp"
+        android:gravity="center"
         android:text="Exit" />
 
 
