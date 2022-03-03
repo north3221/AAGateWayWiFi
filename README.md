@@ -1,42 +1,29 @@
-# AAGateWay
+# AAGateWay via tasker
 
-A modified version of [AAGateWay](https://github.com/borconi/AAGateWay) that requires [AAstarter](https://github.com/olivluca/AAstarter) on the master phone.
+A modified version of [AAGateWay](https://github.com/olivluca/AAGateWay) which is modified from [the original AAGateWay](https://github.com/borconi/AAGateWay) that requires [AAstarter](https://github.com/north3221/AAstarter) on the master phone.
 
-I only tested it on my car (with a MIB 2 headuint) and my phones. The master is a Xiaomi Redmi Note 4, the slave is a Motorola Moto E 2015 (surnia), both running
-LineagesOs 17.1 (android 10).
+I've tested it on a couple slaves with two differnt cars. I use tasker to manage the automation of this, both on the slave and master.
 
-The MIB 2 I have is quite peculiar: when it cannot establish a connection it will briefly remove power on the usb connector and that will upset
-the apk released by Emil, hence the need to write this one.
+I have the slave rooted. Likely you dont need it rooted but will probably need to adapt a few of the actions. Tasker should tell you any missing permissions you need like write secure settings etc.
+[Slave AA Gateway Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAAGateway-tcp)
 
+I dont hve the master rooted. This did cause an issue with turning on wifi, so I disabled that action and instead I use a notification which tells a bixby routing to turn on wifi
+If wifi action forks for you enable the action, and delete my wifi notification ones. If it doesnt either keep it disabled/delete the action and just make sure you keep always on your phone
+[Master AA Starter Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAndroidAuto)
+NB it uses a public variable %UIMODE_TEMP, because Android 12 has broken %UIMODE in tasker, so I have created
+[AA Helper Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAA+Helper)
+If you are using a phone where %UIMODE works in tasker, then you dont need this helper but you do need to change all the references from %UIMODE_TEMP to %UIMODE
 
-The steps to make it work are:
+To get internet access on my master when conencted to slave wifi with no internet I use two things:
+	Mobile data only apps: Settings>Connections>Data Usage>Mobile data only apps
+	A forward proxy: configured in wifi settings for connecting to gateway and run apache forward proxy via termux (triggered in tasker)
 
-1. open the app and ensure it is using the default options _LISTENING MODE_ and _USE IPV4_.
-1. setup a hotspot on the slave.
-1. configure the master to connect to said hotspot and to keep using it even if it has no Internet.
-1. Install this app on the slave and AAstarter on the master.
-1. Start AAStarter on the master and grant it the required permissions.
-1. Connect the slave to the headunit.
-1. When prompted confirm that you want to use AAGateway as the default application.
-1. Wait for the master to be connected to the slave's hotspot.
-1. Push the button to connect to the phone on the headunit.
+I combine both, so I only need to configure a few apps to have mobile data only. Termux (must be set for proxy to work) and Whatsapp (as proxy is outbound only not inbound push)
 
-It usually needs 2 o 3 (or more) tries before successfully establishing a connection.
-None of the devices needs to be rooted.
+Mobile data only: There is a task 'Update Mobile Data Apps' which will write the current mobile data only apps to a variable. That variable will be used to set thos eapps to mobile data when you connect to slave hotspot
+So just set up the apps you want and then run that task so the list is stored for future use.
 
-The principle of operation is:
-
-* when the headunit starts it, AAGateway will send a trigger on udp port 4455 to AAstarter on the master (actually it will send it to every connected station but
-   1. only the master should be connected to this hotspot
-   1. only the master will reply
-* AAstarter will start Android Auto telling it to connect back to the slave.
-* When the slave successfully initializes the connection with both partners (the headunit and the slave) it will start moving data between them.
-
-If you set the _CONNECTING MODE_ option, then the app will work just like the original AAGateWay (it will connect to the headunit server that
-you'll have to manually start on the master) but with the hotspot on the slave.
-
-With the _USE IPV4_ option the app will only try ipv4 addresses to connect to the master, while with _USE IPV6_ it will only try ipv6 addresses.
-
+I'll write up the apache forward proxy later if people interested, but tbh the mobile data works well. 
 
 =========================
 
