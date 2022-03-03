@@ -27,7 +27,8 @@ To get internet access on my master when conencted to slave wifi with no interne
 
 I combine both, so I only need to configure a few apps to have mobile data only. Termux (must be set for proxy to work) and Whatsapp (as proxy is outbound only not inbound push)
 
-Mobile data only: There is a task 'Update Mobile Data Apps' which will write the current mobile data only apps to a variable. That variable will be used to set thos eapps to mobile data when you connect to slave hotspot
+Mobile data only: There is a task 'Update Mobile Data Apps' which will write the current mobile data only apps to a variable. That variable will be used to set those apps to mobile data when you connect to slave hotspot
+
 So just set up the apps you want and then run that task so the list is stored for future use.
 
 I'll write up the apache forward proxy later if people interested, but tbh the mobile data works well. 
