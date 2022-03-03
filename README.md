@@ -7,17 +7,22 @@ You can build it or get it from the [Releases](https://github.com/north3221/AAGa
 I've tested it on a couple slaves with two differnt cars. I use tasker to manage the automation of this, both on the slave and master.
 
 I have the slave rooted. Likely you dont need it rooted but will probably need to adapt a few of the actions. Tasker should tell you any missing permissions you need like write secure settings etc.
+
 [Slave AA Gateway Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAAGateway-tcp)
 
 I dont hve the master rooted. This did cause an issue with turning on wifi, so I disabled that action and instead I use a notification which tells a bixby routing to turn on wifi
 If wifi action forks for you enable the action, and delete my wifi notification ones. If it doesnt either keep it disabled/delete the action and just make sure you keep always on your phone
+
 [Master AA Starter Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAndroidAuto)
 NB it uses a public variable %UIMODE_TEMP, because Android 12 has broken %UIMODE in tasker, so I have created
+
 [AA Helper Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAA+Helper)
 If you are using a phone where %UIMODE works in tasker, then you dont need this helper but you do need to change all the references from %UIMODE_TEMP to %UIMODE
 
 To get internet access on my master when conencted to slave wifi with no internet I use two things:
+	
 	Mobile data only apps: Settings>Connections>Data Usage>Mobile data only apps
+	
 	A forward proxy: configured in wifi settings for connecting to gateway and run apache forward proxy via termux (triggered in tasker)
 
 I combine both, so I only need to configure a few apps to have mobile data only. Termux (must be set for proxy to work) and Whatsapp (as proxy is outbound only not inbound push)
