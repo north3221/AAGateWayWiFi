@@ -1,4 +1,4 @@
-package uk.co.borconi.emil.aagateway;
+package com.north3221.aagateway;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

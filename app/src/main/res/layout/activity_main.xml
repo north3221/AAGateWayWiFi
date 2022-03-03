@@ -7,39 +7,14 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="91dp" />
-
     <TextView
-        android:id="@+id/textView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:autoLink="web"
-        android:gravity="center"
-        android:paddingTop="20dp"
-        android:textSize="18dp"
-        android:visibility="gone" />
-
-    <ToggleButton
-        android:id="@+id/swListening"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="mode"
-        android:textOff="connecting mode"
-        android:textOn="listening mode" />
+        android:layout_height="91dp"
+        android:text="There is nothing to set as this app is to be used as a listener when you use tasker to trigger the aagateway" />
 
     <Space
         android:layout_width="match_parent"
         android:layout_height="26dp" />
-
-    <ToggleButton
-        android:id="@+id/swIpMode"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="use"
-        android:textOff="use ipv6"
-        android:textOn="use ipv4" />
 
     <Button
         android:id="@+id/exitButton"

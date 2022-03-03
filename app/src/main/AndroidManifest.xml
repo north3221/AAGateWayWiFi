@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="uk.co.borconi.emil.aagateway">
+    package="com.north3221.aagateway">
     <uses-feature android:name="android.hardware.usb"/>
     <uses-feature android:name="android.hardware.usb.accessory"/>
 
@@ -17,7 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity" android:launchMode="singleInstance" android:showOnLockScreen="true">
+        <activity android:name="com.north3221.aagateway.MainActivity" android:launchMode="singleInstance" android:showOnLockScreen="true">
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"/>
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_DETACHED"/>
@@ -26,12 +26,17 @@
             </intent-filter>
             <meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" android:resource="@xml/accessory_filter"/>
         </activity>
-        <receiver android:name=".PowerConnectionReceiver">
+        <receiver android:name="com.north3221.aagateway.PowerConnectionReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED"/>
             </intent-filter>
         </receiver>
-        <service android:name=".HackerService" android:exported="false">
+        <receiver android:name=".ServiceReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="com.north3221.aagateway.service.START"/>
+            </intent-filter>
+        </receiver>
+        <service android:name="com.north3221.aagateway.HackerService" android:exported="false">
 
         </service>
     </application>

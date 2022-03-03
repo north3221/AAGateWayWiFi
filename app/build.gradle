@@ -4,7 +4,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 27
     defaultConfig {
-        applicationId "uk.co.borconi.emil.aagateway"
+        applicationId "com.north3221.aagateway"
         minSdkVersion 14
         targetSdkVersion 27
         versionCode 1
