@@ -21,9 +21,9 @@ If you are using a phone where %UIMODE works in tasker, then you dont need this 
 
 To get internet access on my master when conencted to slave wifi with no internet I use two things:
 	
-	Mobile data only apps: Settings>Connections>Data Usage>Mobile data only apps
+- Mobile data only apps: Settings>Connections>Data Usage>Mobile data only apps
 	
-	A forward proxy: configured in wifi settings for connecting to gateway and run apache forward proxy via termux (triggered in tasker)
+- A forward proxy: configured in wifi settings for connecting to gateway and run apache forward proxy via termux (triggered in tasker)
 
 I combine both, so I only need to configure a few apps to have mobile data only. Termux (must be set for proxy to work) and Whatsapp (as proxy is outbound only not inbound push)
 
