@@ -2,7 +2,7 @@
 
 A modified version of [AAGateWay](https://github.com/olivluca/AAGateWay) which is modified from [the original AAGateWay](https://github.com/borconi/AAGateWay) that requires [AAstarter](https://github.com/north3221/AAstarter) on the master phone.
 
-You can build it or get it from the [Releases] (https://github.com/north3221/AAGateWay/releases) section and you have to install it on the slave phone.
+You can build it or get it from the [Releases](https://github.com/north3221/AAGateWay/releases) section and you have to install it on the slave phone.
 
 I've tested it on a couple slaves with two differnt cars. I use tasker to manage the automation of this, both on the slave and master.
 
