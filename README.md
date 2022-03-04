@@ -10,8 +10,7 @@ I have the slave rooted. Likely you dont need it rooted but will probably need t
 
 [Slave AA Gateway Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAAGateway-tcp)
 
-I dont hve the master rooted. This did cause an issue with turning on wifi, so I disabled that action and instead I use a notification which tells a bixby routing to turn on wifi
-If wifi action forks for you enable the action, and delete my wifi notification ones. If it doesnt either keep it disabled/delete the action and just make sure you keep always on your phone
+I dont have the master rooted.
 
 [Master AA Starter Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAndroidAuto)
 NB it uses a public variable %UIMODE_TEMP, because Android 12 has broken %UIMODE in tasker, so I have created
