@@ -26,6 +26,34 @@
         android:text="Exit" />
 
 
+    <TextView
+        android:id="@+id/usbconnection"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:tag="USB"
+        android:text="USB: " />
+    <TextView
+        android:id="@+id/wificonnection"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:tag="WIFI"
+        android:text="WIFI: " />
+
+    <TextView
+        android:id="@+id/aaservice"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:tag="AA"
+        android:text="AA: " />
+
+    <TextView
+        android:id="@+id/log"
+        android:layout_width="match_parent"
+        android:layout_height="420dp"
+        android:tag="ERROR"
+        android:text="" />
+
+
 </LinearLayout>
 
 
