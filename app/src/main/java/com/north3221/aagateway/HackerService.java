@@ -9,27 +9,19 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
-import android.net.DhcpInfo;
-import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.support.annotation.RequiresApi;
-import android.support.v4.content.LocalBroadcastManager;
-import android.text.format.Formatter;
 import android.util.Log;
-
-import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.InputStreamReader;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.DatagramSocket;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -38,6 +30,7 @@ import java.util.Arrays;
 
 
 import static android.app.NotificationManager.IMPORTANCE_HIGH;
+import static com.north3221.aagateway.ConnectionStateReceiver.ACTION_RESET_AASERVICE;
 
 /**
  * Created by Emil on 25/03/2018.
@@ -46,26 +39,19 @@ import static android.app.NotificationManager.IMPORTANCE_HIGH;
 public class HackerService extends Service {
     private static final String TAG = "AAGateWay";
     private NotificationManager mNotificationManager;
-    private Intent notificationIntent;
     private final IBinder mBinder = new LocalBinder();
-    private UsbAccessory mAccessory;
-    private UsbManager mUsbManager;
     private String gatewayIP;
     private ParcelFileDescriptor mFileDescriptor;
-    private FileDescriptor fd;
     private FileOutputStream phoneOutputStream;
     private FileInputStream phoneInputStream;
+    private AAlogger logger;
+    private static String tvName = "aaservice";
 
     private static OutputStream socketoutput;
     private static DataInputStream socketinput;
-    private static Socket socket;
     public static boolean running=false;
     private boolean localCompleted,usbCompleted;
-    private boolean listening;
-    private boolean ignoreipv6;
     byte [] readbuffer=new byte[16384];
-    private Thread tcpreader;
-    private Thread usbreader;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -81,8 +67,9 @@ public class HackerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        logger = new AAlogger(getApplicationContext());
 
-        String CHANNEL_ONE_ID = "uk.co.borconi.emil.aagateway";
+        String CHANNEL_ONE_ID = "com.north3221.aagateway";
         String CHANNEL_ONE_NAME = "Channel One";
         NotificationChannel notificationChannel = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -115,35 +102,34 @@ public class HackerService extends Service {
 
         if (running) {
             Log.d(TAG,"Service already running");
-            sendBroadcastMessage("Already Running");
+            logger.log("Already Running", tvName);
             return START_STICKY;
         }
         Log.d(TAG,"Service Started");
-        sendBroadcastMessage("Started");
+        logger.log("Started",tvName);
         super.onStartCommand(intent, flags, startId);
-        mAccessory = (UsbAccessory) intent.getParcelableExtra("accessory");
+        UsbAccessory mAccessory = (UsbAccessory) intent.getParcelableExtra("accessory");
         gatewayIP = intent.getStringExtra("gwip");
-        sendBroadcastMessage("USB = Connected IP = " + gatewayIP,"usbconnection");
-        mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        UsbManager mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         mFileDescriptor = mUsbManager.openAccessory(mAccessory);
         if (mFileDescriptor != null) {
-            fd = mFileDescriptor.getFileDescriptor();
+            FileDescriptor fd = mFileDescriptor.getFileDescriptor();
             phoneInputStream = new FileInputStream(fd);
             phoneOutputStream = new FileOutputStream(fd);
             usbCompleted=false;
         } else {
-            Log.e(TAG, "Cannot open usb accessory "+mAccessory.toString());
+            Log.e(TAG, "Cannot open usb accessory "+ mAccessory.toString());
             stopSelf();
             return START_STICKY;
         }
 
         //Manually start AA.
-        sendBroadcastMessage("Running");
+        logger.log("Running",tvName);
         running=true;
         localCompleted = false;
         usbCompleted = false;
-        usbreader = new Thread(new usbpollthread());
-        tcpreader = new Thread(new tcppollthread());
+        Thread usbreader = new Thread(new usbpollthread());
+        Thread tcpreader = new Thread(new tcppollthread());
         usbreader.start();
         tcpreader.start();
 
@@ -151,53 +137,44 @@ public class HackerService extends Service {
     }
 
     class tcppollthread implements Runnable {
-        //private ServerSocket serversocket=null;
-
         public void run() {
+            Looper.prepare();
             Log.d(TAG,"tcp - run");
-            sendBroadcastMessage("TCP Run - running = " + running, "log");
+            logger.log("TCP polling thread started - running:= " + running, "log");
 
-            //connect or accept connection from the phone
             try {
-                sendBroadcastMessage("Connecting to phone: " + gatewayIP);
-
+                logger.log("Connecting to phone: " + gatewayIP, tvName);
                 InetAddress addr = InetAddress.getByName(gatewayIP);
 
                 if (addr.isReachable(300)) {
                     Log.d(TAG, "tcp - reachable " + gatewayIP);
                 } else {
                     Log.d(TAG, "tcp - not reachable " + gatewayIP);
-                    sendBroadcastMessage("Phone not reachable");
-                    sendBroadcastMessage("Unable to reach phone on " + addr, "log");
-                    running = false;
+                    logger.log("Phone not reachable", tvName);
+                    logger.log("TCP polling thread - Unable to reach phone on " + addr, "log");
                     stopSelf();
                 }
 
                 Log.d(TAG, "tcp - connecting to phone" );
-                socket = new Socket();
+                logger.log("TCP polling thread -  Opening connection to phone", "log");
+                Socket socket = new Socket();
                 socket.setSoTimeout(5000);
                 socket.connect(new InetSocketAddress(gatewayIP, 5277), 500);
                 Log.d(TAG, "tcp - connected");
-                sendBroadcastMessage("Connected to phone and running = " + running, "log");
-                //}
+                logger.log("TCP polling thread - Opening Socket to phone", "log");
+                socketoutput = socket.getOutputStream();
+                socketinput = new DataInputStream(socket.getInputStream());
+                socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
+                socketoutput.flush();
+                byte[] recv = new byte[12];
+                socketinput.read(recv);
+                Log.d(TAG, "tcp - recv from phone " + bytesToHex(recv));
+                localCompleted = true;
+                logger.log("TCP Polling thread recv from phone " + bytesToHex(recv), "log");
 
-                //at this point running could be false in non listening mode and no address found
-                if (running) {
-                    sendBroadcastMessage("Getting tcp from phone", "log");
-                    socketoutput = socket.getOutputStream();
-                    socketinput = new DataInputStream(socket.getInputStream());
-                    socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
-                    socketoutput.flush();
-                    byte[] recv = new byte[12];
-                    socketinput.read(recv);
-                    Log.d(TAG, "tcp - recv from phone " + bytesToHex(recv));
-                    localCompleted = true;
-                    sendBroadcastMessage("tcp from phone " + bytesToHex(recv), "log");
-                }
             } catch (Exception e) {
                 Log.e(TAG, "tcp - error opening phone " + e.getMessage());
-                sendBroadcastMessage("error opening phone " + e.getMessage(), "log");
-                running = false;
+                logger.log("TCP polling thread - error opening phone " + e.getMessage(), "log");
                 stopSelf();
             }
 
@@ -209,11 +186,10 @@ public class HackerService extends Service {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                     Log.e(TAG, "tcp - error sleeping "+e.getMessage());
-                    sendBroadcastMessage("TCP error sleeping = " + e.getMessage(), "log");
+                    logger.log("TCP error sleeping = " + e.getMessage(), "log");
                 }
             }
 
-            //Looper.prepare();
             while (running)
             {
                 try {
@@ -221,14 +197,13 @@ public class HackerService extends Service {
 
                 } catch (Exception e) {
                     Log.e(TAG,"tcp - in main loop "+e.getMessage());
-                    sendBroadcastMessage("TCP error in main loop = " + e.getMessage(), "log");
-                    running = false;
+                    logger.log("TCP error in main loop = " + e.getMessage(), "log");
                     stopSelf();
+                    break;
                 }
             }
-
             Log.d(TAG,"tcp - end");
-            sendBroadcastMessage("tcp end");
+            logger.log("tcp end",tvName);
             stopSelf();
         }
 
@@ -236,9 +211,8 @@ public class HackerService extends Service {
 
     class usbpollthread implements Runnable {
 
-
         public void run() {
-
+            Looper.prepare();
             Log.d(TAG,"usb - run");
 
             byte buf [] = new byte[16384];
@@ -247,22 +221,26 @@ public class HackerService extends Service {
             try {
                 x=phoneInputStream.read(buf);
                 Log.d(TAG, "usb -received from usb "+bytesToHex((Arrays.copyOf(buf, x))));
-                sendBroadcastMessage("received from usb");
+                logger.log("received from usb",tvName);
                 phoneOutputStream.write(new byte[]{0, 3, 0, 8, 0, 2, 0, 1, 0, 4, 0, 0});
-                //tcpreader.join();
                 usbCompleted = true;
             } catch (Exception e) {
                 Log.e(TAG, "usb - error init "+e.getMessage());
-                running = false;
                 stopSelf();
             }
 
-            if (!localCompleted && running)
+            if (!localCompleted && running) {
                 Log.d(TAG, "usb - waiting for local");
-                sendBroadcastMessage("usb waiting for local");
+                logger.log("usb waiting for local",tvName);
+            }
+            int i = 0;
             while (!localCompleted && running) {
+                i++;
                 try {
                     Thread.sleep(100);
+                    if ((i % 10) == 0) {
+                        logger.log("usb waiting for local count " + i,tvName);
+                    }
                 } catch (InterruptedException e) {
                     Log.e(TAG, "usb - error sleeping "+e.getMessage());
                 }
@@ -277,18 +255,9 @@ public class HackerService extends Service {
                 catch (Exception e)
                 {
                     Log.e(TAG,"usb - in main loop " + e.getMessage());
-                    running = false;
                     stopSelf();
                 }
 
-            }
-            if (mFileDescriptor!=null) {
-                try {
-                    mFileDescriptor.close();
-                } catch (IOException e) {
-                    Log.d(TAG, "error closing usb " + e.getMessage());
-                    sendBroadcastMessage("error closing usb");
-                }
             }
             Log.d(TAG,"usb - end");
             stopSelf();
@@ -296,8 +265,6 @@ public class HackerService extends Service {
     };
 
     private void getLocalmessage(boolean canBeEmpty) throws IOException {
-
-
         int enc_len;
         socketinput.readFully(readbuffer,0,4);
         int pos=4;
@@ -307,10 +274,8 @@ public class HackerService extends Service {
             pos+=4;
             socketinput.readFully(readbuffer,4,4);
         }
-
         socketinput.readFully(readbuffer,pos,enc_len);
         phoneOutputStream.write(Arrays.copyOf(readbuffer,enc_len+pos));
-
 
     }
 
@@ -322,8 +287,25 @@ public class HackerService extends Service {
     public void onDestroy() {
         running=false;
         mNotificationManager.cancelAll();
+        if (mFileDescriptor!=null) {
+            try {
+                mFileDescriptor.close();
+                phoneInputStream.close();
+                phoneOutputStream.close();
+            } catch (IOException e) {
+                Log.d(TAG, "error closing usb " + e.getMessage());
+                logger.log("error closing usb",tvName);
+            }
+        }
         Log.d(TAG,"service destroyed");
-        //android.os.Process.killProcess (android.os.Process.myPid ());
+        logger.log("Service Destroyed", "log");
+        resetService();
+    }
+
+    private void resetService() {
+        Intent intent = new Intent();
+        intent.setAction(ACTION_RESET_AASERVICE);
+        sendBroadcast(intent);
     }
 
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
@@ -335,22 +317,7 @@ public class HackerService extends Service {
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
         String aux = new String(hexChars);
-        // Log.d("AAGateWay","ByteTohex: " + aux);
         return aux;
-    }
-
-    private void sendBroadcastMessage(String message) {
-        sendBroadcastMessage(message, "aaservice");
-    }
-    private void sendBroadcastMessage(String message, String tvid) {
-        try {
-            Intent tvIntent = new Intent(MainActivity.MESSAGE_INTENT_BROADCAST);
-            tvIntent.putExtra(MainActivity.MESSAGE_TVID, tvid);
-            tvIntent.putExtra(MainActivity.MESSAGE_EXTRA, message);
-            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(tvIntent);
-        } catch (Exception e) {
-            //TODO
-        }
     }
 
 }

@@ -1,70 +1,43 @@
-# AAGateWay via tasker
+# AAGateWay Master Wifi Hotspot (Root Required)
 
-A modified version of [AAGateWay](https://github.com/olivluca/AAGateWay) which is modified from [the original AAGateWay](https://github.com/borconi/AAGateWay) that requires [AAstarter](https://github.com/north3221/AAstarter) on the master phone.
+I have reworked the AAGateway to wait for USB adapter AND connection to WiFi.
 
-You can build it or get it from the [Releases](https://github.com/north3221/AAGateWay/releases) section and you have to install it on the slave phone.
+This only works running on the slave and connecting to master wifi hotspot
 
-I've tested it on a couple slaves with two differnt cars. I use tasker to manage the automation of this, both on the slave and master.
+Shout out to the:
+    [the original AAGateWay](https://github.com/borconi/AAGateWay)
+    and also the modified version of [AAGateWay](https://github.com/olivluca/AAGateWay)
 
-I have the slave rooted. Likely you dont need it rooted but will probably need to adapt a few of the actions. Tasker should tell you any missing permissions you need like write secure settings etc.
+As couldn't of done this without them
 
-[Slave AA Gateway Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAAGateway-tcp)
+You can build it or get it from the [Releases](https://github.com/north3221/AAGateWayWiFi/releases) section and you have to install it on the slave phone.
 
-I dont have the master rooted.
+Set up:
+## MASTER
+So you MUST have [Android Auto Head Unit Server running](https://developer.android.com/training/cars/testing#:~:text=You%20only%20need%20to%20enable,server%20(see%20figure%201).) on your Master device
+You also must have WifI tether on Master device
+NB I use Tasker to automate both of these things i.e. turn on wifi tether when connected to car bluetooth and some screen touched for AA HUS
 
-[Master AA Starter Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAndroidAuto)
-NB it uses a public variable %UIMODE_TEMP, because Android 12 has broken %UIMODE in tasker, so I have created
+## SLAVE
+Remove battery restrictions on AAgateway app on slave (I've added a prompt when app opens for this)
+Allow storage access. Do this manually in device settings for app (TODO need to add prompt). This is for writing a log file to sdcard when logging set to full + log
+Ensure slave can connect to master wifi tether, i.e. save the network. But NO other wifi (you don't want it to connect to the wrong network)
+### Settings
+The setting control wifi means the app will turn on wifi when the slave is powered and turn it off after its has no power.
+The app only waits for wifi connection, not specifically your master, hence make sure only one wifi set up
+First time you try connecting you will need to allowed root access (TODO add prompt at startup) NB it wont ask till connected to car and wifi
+First time it will also prompt do you want to use aawireless for android automotive, say 'always'
 
-[AA Helper Taskernet](https://taskernet.com/shares/?user=AS35m8nqYTffEdExZ6ozF%2BBQfM24JDN5ykKGTNXQJ8EIFoh9D8HPiE1OzO69y84JwUDw5TlK&id=Project%3AAA+Helper)
-If you are using a phone where %UIMODE works in tasker, then you dont need this helper but you do need to change all the references from %UIMODE_TEMP to %UIMODE
+Once done, plug slave into car, turn car on, enable wifi (if set wifi control to true, does it for you)
+Slave should show it has usb device and once connects to master wifi, then wifi will show connected, then usb will toggle and service will start
 
-To get internet access on my master when conencted to slave wifi with no internet I use two things:
-	
-- Mobile data only apps: Settings>Connections>Data Usage>Mobile data only apps
-	
-- A forward proxy: configured in wifi settings for connecting to gateway and run apache forward proxy via termux (triggered in tasker)
+AA should fire up, if not it will retry. Let it retry a few times
+If it doesn't work, unplug slave and restart your HUS on master (i.e. stop it and start it again). Then try again
 
-I combine both, so I only need to configure a few apps to have mobile data only. Termux (must be set for proxy to work) and Whatsapp (as proxy is outbound only not inbound push)
+If after a few attempts of this you never get a flash of Android Auto then possibly there is issue between head unit, slave and master.
+I've put in a second usb toggle option. So change that settign to type2 and try it all again.connect
+If still fails after that then no ide, sorry. If you cna debug i yourself great, raise a pr
 
-Mobile data only: There is a task 'Update Mobile Data Apps' which will write the current mobile data only apps to a variable. That variable will be used to set those apps to mobile data when you connect to slave hotspot
-
-So just set up the apps you want and then run that task so the list is stored for future use.
-
-I'll write up the apache forward proxy later if people interested, but tbh the mobile data works well. 
-
-=========================
-
-
-below is the original README:
-
-# AAGateWay
-
-A super simple app which allows the connection to Android Auto over Wifi. It requires an Android Auto compatible car in the first place.
-
-# License
-
-You are free to use the code for personal use in any shape or form you want, and implement any modification you wish, however you are stictly forbiden in creating and publishing app with the same or similar purposer, regardless if the app is free or comrecial. If you wish to use the code in building and releaseing your own app, please seek written approval before proceeding.
-
-# Copyright
-Emil Borconi-Szedressy (C) 2017 - Wakefield - United Kingdom
-
-# Requirements
-
-* Android Studio 3.4.1 or higher
-* Gradle 5.1.1
-* Android API 27
-
-
-# Build 
-
-```
-$> ./gradlew assemble 
-```
-
-This will generate an `apk` file inside build directory `./app/build/outputs/apk/debug`
-
-# Install in debug device
-
-```
-$> ./gradlew installDebug
-```
+NB I an NOT a developer, just a hobbyist who likes to play and would like AA wireless in his car :-)
+I only have a couple of combinations to try and test this on. Happy to look at issues but be patient I may never get to em, my focus is it working for me, just sharing to try and help others.connect
+Please don't start complaining if its not working or I am not responsive to questions or issues

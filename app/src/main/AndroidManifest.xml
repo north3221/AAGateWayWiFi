@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.north3221.aagateway">
     <uses-feature android:name="android.hardware.usb"/>
     <uses-feature android:name="android.hardware.usb.accessory"/>
@@ -8,6 +9,10 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission  android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <application
         android:allowBackup="true"
@@ -16,26 +21,28 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.north3221.aagateway.MainActivity" android:launchMode="singleInstance" android:showOnLockScreen="true">
+        <activity android:name=".MainActivity" android:launchMode="singleInstance" android:exported="true">
             <intent-filter>
-                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"/>
-                <action android:name="android.hardware.usb.action.USB_ACCESSORY_DETACHED"/>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"/>
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_DETACHED"/>
             </intent-filter>
             <meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" android:resource="@xml/accessory_filter"/>
         </activity>
-        <receiver android:name="com.north3221.aagateway.PowerConnectionReceiver">
+        <receiver android:name=".ConnectionStateReceiver" android:launchMode="singleInstance" android:exported="false" android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED"/>
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED"/>
+                <action android:name="com.north3221.aagateway.ACTION_USB_ACCESSORY_ATTACHED"/>
+                <action android:name="com.north3221.aagateway.ACTION_USB_ACCESSORY_DETACHED"></action>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE"
+                    tools:ignore="BatteryLife" />
+                <action android:name="com.north3221.aagateway.ACTION_RESET_AA_SERVICE"/>
+                <action android:name="com.north3221.aagateway.ACTION_RESET_AA_SERVICE_REMINDER"/>
             </intent-filter>
         </receiver>
-        <receiver android:name=".ServiceReceiver" android:enabled="true" android:exported="true">
-            <intent-filter>
-                <action android:name="com.north3221.aagateway.service.START"/>
-            </intent-filter>
-        </receiver>
-        <service android:name="com.north3221.aagateway.HackerService" android:exported="false">
+        <service android:name=".HackerService" android:exported="false">
         </service>
     </application>
 
