@@ -22,10 +22,12 @@ Allow storage access. Do this manually in device settings for app (TODO need to 
 Ensure slave can connect to master wifi tether, i.e. save the network. But NO other wifi (you don't want it to connect to the wrong network)
 
 #### Settings
-Logging Level: Prob worth changing it to full + log while setting up (shows stuff in ui and writes to sdcard/aagatewaylog.txt)  
-Full just shows it all in ui (ui only updates when app is open), and info just shows the key elements on screen.  
-The setting control wifi means the app will turn on wifi when the slave is powered and turn it off after its has no power.  
-The app only waits for wifi connection, not specifically your master, hence make sure only one wifi set up   
+* Logging Level: Prob worth changing it to full + log while setting up (shows stuff in ui and writes to sdcard/aagatewaylog.txt)  
+  Full just shows it all in ui (ui only updates when app is open), and info just shows the key elements on screen.  
+* The setting control wifi means the app will turn on wifi when the slave is powered and turn it off after its has no power.  
+  The app only waits for wifi connection, not specifically your master, hence make sure only one wifi set up
+* Alternate usb toggle is if the standard one doesn't work (see later)
+
 First time you try connecting you will need to allowed root access (TODO add prompt at startup)  
 NB it wont ask till connected to car and wifi   
 First time it will also prompt do you want to use aawireless for android automotive, say 'always'   
