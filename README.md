@@ -45,3 +45,11 @@ If still fails after that then no idea, sorry. If you can debug it yourself grea
 NB I an NOT a developer, just a hobbyist who likes to play and would like AA wireless in his car :-)  
 I only have a couple of combinations to try and test this on. Happy to look at issues but be patient I may never get to em, my focus is it working for me, just sharing to try and help others.connect  
 Please don't start complaining if its not working or I am not responsive to questions or issues
+
+
+#### Known issues
+
+If slave stops, master doesn't seem to realise (AA still thinks its connected). This bawks the HUS. So you need to restart the HUS before next use  
+TODO find a more graceful way of killing connection
+
+MAny other issues... this wont be plane sailing, so dont expect it to be!!
