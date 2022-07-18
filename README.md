@@ -53,4 +53,4 @@ Please don't start complaining if its not working or I am not responsive to ques
 If slave stops, master doesn't seem to realise (AA still thinks its connected). This bawks the HUS. So you need to restart the HUS before next use  
 TODO find a more graceful way of killing connection
 
-MAny other issues... this wont be plane sailing, so dont expect it to be!!
+Many other issues... this wont be plane sailing, so dont expect it to be!!
