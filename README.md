@@ -3,10 +3,9 @@
 I have reworked the AAGateway to wait for USB adapter AND connection to WiFi.  
 This only works running on the slave and connecting to master wifi hotspot
 
-Shout out to the:  
-* [the original AAGateWay](https://github.com/borconi/AAGateWay)
-* also the modified version of [AAGateWay](https://github.com/olivluca/AAGateWay)  
-As couldn't of done this without them
+Shout out to the (couldn't of done this without them):  
+* The original [AAGateWay](https://github.com/borconi/AAGateWay)
+* Also the modified [AAGateWay](https://github.com/olivluca/AAGateWay)
 
 [XDA forum link](https://forum.xda-developers.com/t/android-4-1-proxy-gateway-for-android-auto.3813163)
 
