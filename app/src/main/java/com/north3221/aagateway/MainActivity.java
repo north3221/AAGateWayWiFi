@@ -20,15 +20,19 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.AppCompatTextView;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         sharedpreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
-        checkBatterOptimised();
+        checkBatteryOptimised();
 
         Button button = findViewById(R.id.exitButton);
         button.setOnClickListener(new View.OnClickListener() {
@@ -68,20 +72,16 @@ public class MainActivity extends AppCompatActivity {
         protected void onResume() {
         super.onResume();
         registerReceivers();
+        updateAllTextViews();
+        sharedpreferences.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
-        //lbm.unregisterReceiver(brConnStateRecv);
         lbm.unregisterReceiver(brlogging);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
+        sharedpreferences.unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
     }
 
     @Override
@@ -172,8 +172,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
     private final BroadcastReceiver brlogging = new BroadcastReceiver () {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -181,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void checkBatterOptimised(){
+    private void checkBatteryOptimised(){
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Intent intent = new Intent();
             String packageName = getPackageName();
@@ -192,6 +190,52 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         }
+    }
+
+    private final SharedPreferences.OnSharedPreferenceChangeListener onSharedPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
+            try{
+                int id = Integer.parseInt(key);
+                Log.d(TAG, "updating text view id:= " + id);
+                if (findViewById(id) instanceof TextView) {
+                    updateTextView((TextView) findViewById(id));
+                }
+            } catch (NumberFormatException e) {
+                Log.d(TAG, "None Automated Shared Preferences update Key:= " + key);
+            }
+
+        }
+    };
+
+    private void updateTextView(TextView tv){
+        tv.setText(sharedpreferences.getString(String.valueOf(tv.getId()), (String) tv.getText()));
+    }
+
+    private void updateAllTextViews(){
+        LinearLayout maLayout = findViewById(R.id.main_activity);
+        for (int i = 0; i < maLayout.getChildCount(); ++i){
+            View v = maLayout.getChildAt(i);
+            Log.d(TAG, "Processing View:= "+ v.getId());
+            if (v instanceof ViewGroup){
+                ViewGroup vg = (ViewGroup) v;
+                for (int j = 0;j < vg.getChildCount(); j++){
+                    View cv = vg.getChildAt(j);
+                    Log.d(TAG, "Processing View:= "+ cv.getId());
+                    if (cv instanceof AppCompatTextView){
+                        Log.d(TAG, "View Processed:= "+ cv.toString());
+                        updateTextView((TextView) cv);
+                    }
+                }
+            } else {
+                if (v instanceof AppCompatTextView) {
+                    Log.d(TAG, "View Processed:= " + v.toString());
+                    updateTextView((TextView) v);
+                }
+            }
+        }
+
     }
 
 }

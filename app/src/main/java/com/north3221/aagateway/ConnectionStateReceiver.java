@@ -42,6 +42,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             return;
         }
         logger = new AAlogger(context);
+        String device = "Power";
 
         switch (action){
             case ConnectivityManager.CONNECTIVITY_ACTION:
@@ -51,11 +52,12 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 usbDeviceAttachedAction(context);
                 break;
             case ACTION_USB_ACCESSORY_DETACHED:
+                device = "Android Auto Device";
             case Intent.ACTION_POWER_DISCONNECTED:
-                usbDeviceDetachedAction(context);
+                usbDeviceDetachedAction(context, device);
                 break;
             case Intent.ACTION_POWER_CONNECTED:
-                //if (!getUsbToggled(context))
+                logger.log("USB Power Connected", "usbconnection");
                 setWifi(context, true);
                 break;
             case ACTION_RESET_AASERVICE:
@@ -102,7 +104,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     }
 
     public void usbDeviceAttachedAction(Context context){
-        logger.log("USB connected","usbconnection");
+        logger.log("USB Android Auto Device connected","usbconnection");
         if (isWifiConnected(context)) {
             requestServiceState(context, true, "usb");
         } else {
@@ -130,17 +132,11 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         return null;
     }
 
-    private void usbDeviceDetachedAction(Context context) {
-        /* if (getUsbToggled(context)) {
-            logger.log("USB Toggled", "usbconnection");
-            setUsbToggled(context, false);
-        } else {
+    private void usbDeviceDetachedAction(Context context, String device) {
+        logger.log("USB "+ device + " Disconnected", "usbconnection");
+        requestServiceState(context, false, "usb");
+        setWifi(context, false);
 
-         */
-            logger.log("USB Device disconnected", "usbconnection");
-            requestServiceState(context, false, "usb");
-            setWifi(context, false);
-        //}
     }
 
     private void setWifi(final Context context, boolean tostate){
@@ -156,7 +152,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                     wifi.startScan();
                 }
                 wifi.setWifiEnabled(tostate);
-                logger.log("Turned WiFi On", "log");
+                logger.log("WiFi Turned On", "wificonnection");
                 wifi.startScan();
             }
         } else {
@@ -176,7 +172,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 if (wifi != null) {
                     wifi.setWifiEnabled(false);
-                    logger.log("Turned WiFi Off", "log");
+                    logger.log("WiFi Turned Off", "wificonnection");
                 }
             }
 

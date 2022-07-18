@@ -1,14 +1,13 @@
 package com.north3221.aagateway;
 
-import static com.north3221.aagateway.MainActivity.MESSAGE_EXTRA;
-import static com.north3221.aagateway.MainActivity.MESSAGE_TV_NAME;
 import static com.north3221.aagateway.MainActivity.SHARED_PREF_NAME;
+import static com.north3221.aagateway.MainActivity.TAG;
+
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -25,8 +24,23 @@ class AAlogger {
     }
 
     public void log(String message, String tvName){
-        log(message);
-        sendBroadcast(message, tvName);
+        switch (loggingLevel()){
+            case 0:
+                break;
+            case 3:
+                log(message);
+            case 2:
+                if (tvName != "log"){
+                    updateTextView(message, "log");
+                }
+            case 1:
+                if (tvName == "log" && loggingLevel() == 1){
+                    break;
+                }
+                updateTextView(message,tvName);
+                break;
+        }
+
     }
 
     public void log(String message){
@@ -34,14 +48,18 @@ class AAlogger {
             appendLog(message);
     }
 
-    private void sendBroadcast(String message, String tvName){
-        try {
-            Intent tvIntent = new Intent(MainActivity.MESSAGE_INTENT_BROADCAST);
-            tvIntent.putExtra(MESSAGE_TV_NAME, tvName);
-            tvIntent.putExtra(MESSAGE_EXTRA, message);
-            LocalBroadcastManager.getInstance(loggerContext.getApplicationContext()).sendBroadcast(tvIntent);
-        } catch (Exception ignored){}
+    private void updateTextView(String message, String tvName){
 
+        int id = loggerContext.getResources().getIdentifier(tvName, "id", loggerContext.getPackageName());
+        Log.d(TAG, "Updating Shared Preferences for tvName:= " + tvName + " ID:= " + id);
+        SharedPreferences sp = loggerContext.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
+        if (tvName == "log") {
+            String timeStamp = new SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
+            message = timeStamp + ":" + message + "\n" + sp.getString(String.valueOf(id), "");
+        }
+        SharedPreferences.Editor spEditor = sp.edit();
+        spEditor.putString(String.valueOf(id), message);
+        spEditor.apply();
     }
 
 
@@ -68,7 +86,7 @@ class AAlogger {
                 e.printStackTrace();
             }
         }
-        String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date());
+        String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH:mm:ss").format(new java.util.Date());
         try (BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true))) {
             buf.append(timeStamp).append(": ").append(text);
             buf.newLine();
