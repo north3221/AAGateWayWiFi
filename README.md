@@ -7,7 +7,7 @@ Shout out to the (couldn't of done this without them):
 * The original [AAGateWay](https://github.com/borconi/AAGateWay)
 * Also the modified [AAGateWay](https://github.com/olivluca/AAGateWay)
 
-[XDA forum link](https://forum.xda-developers.com/t/android-4-1-proxy-gateway-for-android-auto.3813163)
+[XDA forum link](https://forum.xda-developers.com/t/android-4-1-proxy-gateway-for-android-auto.3813163) for discussion, requests and support
 
 You can build it or get it from the [Releases](https://github.com/north3221/AAGateWayWiFi/releases) section and you have to install it on the slave phone.
 
