@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_activity"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
     <TextView
@@ -10,72 +11,135 @@
         android:layout_height="wrap_content"
         android:text="@string/main_header" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/logging_level_label"
-        />
-    <Spinner
-        android:id="@+id/logging"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:spinnerMode="dropdown"
-        android:contentDescription=""/>
     <Switch
         android:id="@+id/wificontrol"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:minHeight="48dp"
         android:text="@string/wifi_control_label" />
+
     <Switch
         android:id="@+id/alternateusbtoggle"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:minHeight="48dp"
         android:text="@string/alternate_usb_toggle" />
-
-    <Button
-        android:id="@+id/exitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:text="@string/exit" />
-
 
     <TextView
         android:id="@+id/usbconnection"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
         android:tag="USB"
         android:text="" />
     <TextView
         android:id="@+id/wificonnection"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
         android:tag="WIFI"
         android:text="" />
 
     <TextView
         android:id="@+id/aaservice"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
         android:tag="AA"
         android:text="" />
 
     <ScrollView
         android:id="@+id/log_scroller"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
         android:scrollbars="vertical"
-        android:fillViewport="true">
+        android:layout_weight="1">
 
         <TextView
             android:id="@+id/log"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:tag="Log"/>
     </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="start"
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_weight="1">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/logging_level_label"
+                android:textSize="12dp"
+                />
+
+            <Spinner
+                android:id="@+id/logging"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:contentDescription=""
+                android:minHeight="48dp"
+                android:spinnerMode="dropdown"
+                tools:ignore="SpeakableTextPresentCheck" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/exitButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+
+            android:text="@string/exit" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:id="@+id/requestGroup">
+
+        <Button
+            android:id="@+id/requestBattery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:gravity="bottom"
+            android:text="@string/request_battery"
+            android:layout_weight="1"
+            android:visibility="invisible"/>
+        <Button
+            android:id="@+id/requestRoot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="bottom"
+            android:text="@string/request_root"
+            android:layout_weight="1"
+            android:visibility="invisible"/>
+        <Button
+            android:id="@+id/requestStorage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:gravity="bottom"
+            android:text="@string/request_storage"
+            android:layout_weight="1"
+            android:visibility="invisible"/>
+
+    </LinearLayout>
 
 </LinearLayout>
 

@@ -2,9 +2,12 @@
     <string name="app_name">AAGateWay</string>
     <string name="main_header">Will starts the AAWireless Hacker Service when AA USB Adapter is connected and WiFi is connected</string>
     <string name="exit">Exit</string>
-    <string name="logging_level_label">Logging level: Set the logging level</string>
+    <string name="logging_level_label"><b>Logging level: Set the logging level</b></string>
     <string name="wifi_control_label">Control WiFi: Turn Wifi on/off with power</string>
-    <string name="alternate_usb_toggle">Alternate usb toggle</string>
+    <string name="alternate_usb_toggle">Alternative usb toggle</string>
+    <string name="request_battery">Request Battery</string>
+    <string name="request_root">Request Root</string>
+    <string name="request_storage">Request Storage</string>
     <string-array name="logging">
         <item>off</item>
         <item>info</item>

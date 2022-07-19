@@ -18,8 +18,9 @@ You also must have WifI tether on Master device
 NB I use Tasker to automate both of these things i.e. turn on wifi tether when connected to car bluetooth and some screen touches for AA HUS
 
 ### SLAVE
-Remove battery restrictions on AAgateway app on slave (I've added a prompt when app opens for this)  
-Allow storage access. Do this manually in device settings for app (TODO need to add prompt). This is for writing a log file to sdcard when logging set to full + log   
+Remove battery restrictions on AAgateway app on slave - Click the request battery button  
+Allow storage access - Click the request storage button This is for writing a log file to sdcard when logging set to full + log   
+Root is required - click request root button. This is to enable toggling USB to connect to car head unit when service ready
 Ensure slave can connect to master wifi tether, i.e. save the network. But NO other wifi (you don't want it to connect to the wrong network)
 
 #### Settings
@@ -27,7 +28,7 @@ Ensure slave can connect to master wifi tether, i.e. save the network. But NO ot
   Full just shows it all in ui (ui only updates when app is open), and info just shows the key elements on screen.  
 * The setting control wifi means the app will turn on wifi when the slave is powered and turn it off after its has no power.  
   The app only waits for wifi connection, not specifically your master, hence make sure only one wifi set up
-* Alternate usb toggle is if the standard one doesn't work (see later)
+* Alternative usb toggle is if the standard one doesn't work (see later)
 
 First time you try connecting you will need to allowed root access (TODO add prompt at startup)  
 NB it wont ask till connected to car and wifi   

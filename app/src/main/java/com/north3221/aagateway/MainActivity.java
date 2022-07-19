@@ -7,17 +7,21 @@ import static com.north3221.aagateway.ConnectionStateReceiver.ACTION_USB_ACCESSO
 import static com.north3221.aagateway.ConnectionStateReceiver.SHARED_PREF_KEY_USB_CONTROL_TYPE;
 import static com.north3221.aagateway.ConnectionStateReceiver.SHARED_PREF_KEY_WIFI_CONTROL;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatTextView;
@@ -32,21 +36,27 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String
             TAG = "AAGateWay",
-            SHARED_PREF_NAME = TAG;
-
-    public static final String
+            SHARED_PREF_NAME = TAG,
             MESSAGE_INTENT_BROADCAST = "TEXTVIEW_MESSAGE_BROADCAST",
             MESSAGE_EXTRA = "MESSAGE",
-            MESSAGE_TV_NAME = "TEXTVIEWNAME";
+            MESSAGE_TV_NAME = "TEXTVIEWNAME",
+            SHARED_PREF_KEY_ROOT = "ISROOT";
+    private static final int STORAGE_PERMISSION_REQUEST_CODE = 0;
 
     private static SharedPreferences sharedpreferences;
     private static AAlogger aalogger;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
 
         sharedpreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         checkBatteryOptimised();
+        checkRoot();
+        checkExternalStorage();
 
         Button button = findViewById(R.id.exitButton);
         button.setOnClickListener(new View.OnClickListener() {
@@ -92,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
         Intent usbIntent;
         if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(paramIntent.getAction()) && paramIntent.getParcelableExtra("accessory") != null){
             usbIntent = new Intent(ACTION_USB_ACCESSORY_ATTACHED);
-            usbIntent.putExtra("accessory",paramIntent.getParcelableExtra("accessory"));
+            usbIntent.putExtra("accessory", (Bundle) paramIntent.getParcelableExtra("accessory"));
         } else {
          usbIntent = new Intent(ACTION_USB_ACCESSORY_DETACHED);
         }
@@ -187,14 +199,100 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkBatteryOptimised(){
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Intent intent = new Intent();
-            String packageName = getPackageName();
             PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-            if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {
-                intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                intent.setData(Uri.parse("package:" + packageName));
-                startActivity(intent);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                findViewById(R.id.requestGroup).setVisibility(View.VISIBLE);
+                final Button batteryButton = findViewById(R.id.requestBattery);
+                batteryButton.setVisibility(View.VISIBLE);
+                batteryButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent intent = new Intent();
+                        intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                        intent.setData(Uri.parse("package:" + getPackageName()));
+                        startActivity(intent);
+                        batteryButton.setVisibility(View.INVISIBLE);
+                    }
+                });
             }
+        }
+    }
+
+    private void checkRoot(){
+        if (sharedpreferences.getBoolean(SHARED_PREF_KEY_ROOT,false))
+            return;
+
+        findViewById(R.id.requestGroup).setVisibility(View.VISIBLE);
+        final Button rootButton = findViewById(R.id.requestRoot);
+        rootButton.setVisibility(View.VISIBLE);
+        rootButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requstRoot();
+                finish();
+                startActivity(getIntent());
+            }
+        });
+    }
+
+    private void requstRoot(){
+        try {
+            String [] cmdTestSU = new String[]{"su", "-c", "ls", "/"};
+            Process p = Runtime.getRuntime().exec(cmdTestSU);
+            BufferedReader bufferedReader = new BufferedReader(
+                    new InputStreamReader(p.getInputStream()));
+
+            // Grab the results
+            StringBuilder resRoot = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                resRoot.append(line).append("\n");
+            }
+            if (resRoot.length()>0) {
+                SharedPreferences.Editor editor = sharedpreferences.edit();
+                editor.putBoolean(SHARED_PREF_KEY_ROOT, true);
+                editor.apply();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e(TAG,"Error getting root:", e);
+        }
+    }
+
+    private void checkExternalStorage(){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            findViewById(R.id.requestGroup).setVisibility(View.VISIBLE);
+            final Button storageButton = findViewById(R.id.requestStorage);
+            storageButton.setVisibility(View.VISIBLE);
+            storageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    requestStorate();
+                }
+            });
+        }
+    }
+
+    private void requestStorate(){
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},0);
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
+            // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                finish();
+                startActivity(getIntent());
+            } else {
+                Toast.makeText(this,"Unknown permission:= " + grantResults.toString(),Toast.LENGTH_SHORT).show();
+                aalogger.log("Unknown permission:= " + grantResults.toString());
+            }
+
         }
     }
 
