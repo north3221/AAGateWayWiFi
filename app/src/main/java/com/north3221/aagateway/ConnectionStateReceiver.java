@@ -90,7 +90,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
 
     }
 
-    private String getGWIP (Context context) {
+    private String getGatewayIP (Context context) {
         try {
             WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             DhcpInfo dhcp = wm.getDhcpInfo();
@@ -148,15 +148,15 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         if (tostate) {
             WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             if (wifi != null) {
-                if (wifi.isWifiEnabled()) {
-                    wifi.startScan();
+                if (!wifi.isWifiEnabled()) {
+                    wifi.setWifiEnabled(tostate);
+                    logger.log("WiFi Turned On", "wificonnection");
                 }
-                wifi.setWifiEnabled(tostate);
-                logger.log("WiFi Turned On", "wificonnection");
                 wifi.startScan();
             }
         } else {
-            delayedWiFiOff(context);
+            if (!isPowerConnected(context))
+                delayedWiFiOff(context);
         }
     }
 
@@ -171,8 +171,10 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             public void onFinish() {
                 WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 if (wifi != null) {
-                    wifi.setWifiEnabled(false);
-                    logger.log("WiFi Turned Off", "wificonnection");
+                    if (!isPowerConnected(context)) {
+                        wifi.setWifiEnabled(false);
+                        logger.log("WiFi Turned Off", "wificonnection");
+                    }
                 }
             }
 
@@ -181,7 +183,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
 
     private void requestServiceState(Context context,boolean reqState, String type){
         UsbAccessory usb = getUsbAccessory(context);
-        String gatewayIP = getGWIP(context);
+        String gatewayIP = getGatewayIP(context);
         logger.log("Requested service: " + reqState + " - Current state: " + HackerService.running, "log");
         logger.log("Gateway IP: " + gatewayIP + " - USB attached : " + isUsbAttached(context),"log");
         if (reqState) {

@@ -32,6 +32,9 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -46,11 +49,13 @@ public class MainActivity extends AppCompatActivity {
             MESSAGE_TV_NAME = "TEXTVIEWNAME";
 
     private static SharedPreferences sharedpreferences;
+    private static AAlogger aalogger;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        aalogger = new AAlogger(this);
 
         sharedpreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         checkBatteryOptimised();
@@ -133,6 +138,10 @@ public class MainActivity extends AppCompatActivity {
                 SharedPreferences.Editor editor = sharedpreferences.edit();
                 editor.putInt(SHARED_PREF_KEY_LOG, spinnerLogging.getSelectedItemPosition());
                 editor.apply();
+                Log.d(TAG,"Logging level changed:= "+i);
+
+                aalogger.loggingLevelChanged();
+
             }
 
             @Override
@@ -209,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     private void updateTextView(TextView tv){
         tv.setText(sharedpreferences.getString(String.valueOf(tv.getId()), (String) tv.getText()));
     }
@@ -217,20 +227,16 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout maLayout = findViewById(R.id.main_activity);
         for (int i = 0; i < maLayout.getChildCount(); ++i){
             View v = maLayout.getChildAt(i);
-            Log.d(TAG, "Processing View:= "+ v.getId());
             if (v instanceof ViewGroup){
                 ViewGroup vg = (ViewGroup) v;
                 for (int j = 0;j < vg.getChildCount(); j++){
                     View cv = vg.getChildAt(j);
-                    Log.d(TAG, "Processing View:= "+ cv.getId());
                     if (cv instanceof AppCompatTextView){
-                        Log.d(TAG, "View Processed:= "+ cv.toString());
                         updateTextView((TextView) cv);
                     }
                 }
             } else {
                 if (v instanceof AppCompatTextView) {
-                    Log.d(TAG, "View Processed:= " + v.toString());
                     updateTextView((TextView) v);
                 }
             }
