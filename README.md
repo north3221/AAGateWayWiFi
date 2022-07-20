@@ -22,7 +22,7 @@ NB I use Tasker to automate both of these things i.e. turn on wifi tether when c
 * Allow storage access - Click the request storage button This is for writing a log file to sdcard when logging set to full + log  
 * Root is required - click request root button. This is to enable toggling USB to connect to car head unit when service ready  
 * Ensure slave can connect to master wifi tether, i.e. save the network. But NO other wifi (you don't want it to connect to the wrong network)  
-* Worth making sure that teh screen wakes on power input, as some phones don't connect to wifi with screen off. This app does wake lock for up to 5 mins but doesnt work if screen off
+* Worth making sure that the screen wakes on power input, as some phones don't connect to wifi with screen off. This app does wake lock for up to 5 mins but doesnt work if screen off
 
 #### Settings
 * Logging Level: Prob worth changing it to full + log while setting up (shows stuff in ui and writes to sdcard/aagatewaylog.txt)  
