@@ -8,12 +8,12 @@ import static com.north3221.aagateway.ConnectionStateReceiver.SHARED_PREF_KEY_US
 import static com.north3221.aagateway.ConnectionStateReceiver.SHARED_PREF_KEY_WIFI_CONTROL;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.os.Build;
@@ -22,7 +22,6 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatTextView;
 import android.util.Log;
@@ -48,14 +47,11 @@ public class MainActivity extends AppCompatActivity {
     public static final String
             TAG = "AAGateWay",
             SHARED_PREF_NAME = TAG,
-            MESSAGE_INTENT_BROADCAST = "TEXTVIEW_MESSAGE_BROADCAST",
-            MESSAGE_EXTRA = "MESSAGE",
-            MESSAGE_TV_NAME = "TEXTVIEWNAME",
-            SHARED_PREF_KEY_ROOT = "ISROOT";
+            SHARED_PREF_KEY_ROOT = "HAS_ROOT";
     private static final int STORAGE_PERMISSION_REQUEST_CODE = 0;
 
     private static SharedPreferences sharedpreferences;
-    private static AAlogger aalogger;
+    private AAlogger aalogger;
 
 
     @Override
@@ -85,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
         protected void onResume() {
         super.onResume();
-        registerReceivers();
         updateAllTextViews();
         sharedpreferences.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
     }
@@ -93,8 +88,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
-        lbm.unregisterReceiver(brlogging);
         sharedpreferences.unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
     }
 
@@ -104,33 +97,12 @@ public class MainActivity extends AppCompatActivity {
         Intent usbIntent;
         if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(paramIntent.getAction()) && paramIntent.getParcelableExtra("accessory") != null){
             usbIntent = new Intent(ACTION_USB_ACCESSORY_ATTACHED);
-            usbIntent.putExtra("accessory", (Bundle) paramIntent.getParcelableExtra("accessory"));
+            ComponentName componentName = new ComponentName(this,ConnectionStateReceiver.class);
+            usbIntent.putExtra("accessory", (UsbAccessory) paramIntent.getParcelableExtra("accessory"));
         } else {
          usbIntent = new Intent(ACTION_USB_ACCESSORY_DETACHED);
         }
         sendBroadcast(usbIntent);
-    }
-
-    private void registerReceivers(){
-        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
-        lbm.registerReceiver(brlogging, new IntentFilter(MESSAGE_INTENT_BROADCAST));
-
-    }
-
-    private void updateLoggingInfo(Intent intent){
-        String message = intent.getStringExtra(MESSAGE_EXTRA);
-        String tvid = intent.getStringExtra(MESSAGE_TV_NAME);
-        Log.d(TAG, "Message: " + message);
-        Log.d(TAG, "TextView Id: " + tvid);
-
-        int id = getResources().getIdentifier(tvid, "id", getPackageName());
-        TextView tv = (TextView) findViewById(id);
-        Log.d(TAG, "ID: " + id);
-        if (tvid.equals("log")) {
-            tv.setText(tv.getTag() + ": " + message + "\n" + tv.getText());
-        } else {
-            tv.setText(tv.getTag() + ": " + message);
-        }
     }
 
     private void createLoggingSpinner(){
@@ -190,13 +162,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private final BroadcastReceiver brlogging = new BroadcastReceiver () {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            updateLoggingInfo(intent);
-        }
-    };
-
     private void checkBatteryOptimised(){
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
@@ -228,14 +193,14 @@ public class MainActivity extends AppCompatActivity {
         rootButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                requstRoot();
+                requestRoot();
                 finish();
                 startActivity(getIntent());
             }
         });
     }
 
-    private void requstRoot(){
+    private void requestRoot(){
         try {
             String [] cmdTestSU = new String[]{"su", "-c", "ls", "/"};
             Process p = Runtime.getRuntime().exec(cmdTestSU);

@@ -1,6 +1,7 @@
 package com.north3221.aagateway;
 
 import static com.north3221.aagateway.MainActivity.SHARED_PREF_NAME;
+import static com.north3221.aagateway.MainActivity.TAG;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -18,6 +19,7 @@ import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.CountDownTimer;
+import android.os.PowerManager;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.Toast;
@@ -25,6 +27,10 @@ import java.io.IOException;
 
 public class ConnectionStateReceiver extends BroadcastReceiver {
     private AAlogger logger;
+    private static CountDownTimer wifiCountDown;
+    private static PowerManager.WakeLock wakeLock;
+    private static Boolean wifiConnected;
+
     public static final String
             ACTION_USB_ACCESSORY_ATTACHED = "com.north3221.aagateway.ACTION_USB_ACCESSORY_ATTACHED",
             ACTION_USB_ACCESSORY_DETACHED = "com.north3221.aagateway.ACTION_USB_ACCESSORY_DETACHED",
@@ -58,6 +64,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 break;
             case Intent.ACTION_POWER_CONNECTED:
                 logger.log("USB Power Connected", "usbconnection");
+                setWakeLock(context,true);
                 setWifi(context, true);
                 break;
             case ACTION_RESET_AASERVICE:
@@ -73,10 +80,11 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     }
 
     private void wifiConnectivityAction(Context context, Intent intent){
-        NetworkInfo ni = (NetworkInfo) intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+        NetworkInfo ni = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
         if (ni != null && ni.getType() == ConnectivityManager.TYPE_WIFI) {
             if (ni.isConnected()) {
                 logger.log("Wifi Connected", "wificonnection");
+                wifiConnected = true;
                 if (isUsbAttached(context)) {
                     requestServiceState(context, true, "wifi");
                 } else {
@@ -84,6 +92,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 }
             } else {
                 logger.log("Wifi Disconnected", "wificonnection");
+                wifiConnected = false;
                 requestServiceState(context, false, "wifi");
             }
         }
@@ -93,9 +102,12 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     private String getGatewayIP (Context context) {
         try {
             WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            DhcpInfo dhcp = wm.getDhcpInfo();
-            if (dhcp.gateway != 0) {
-                return Formatter.formatIpAddress(dhcp.gateway);
+            DhcpInfo dhcp;
+            if (wm != null) {
+                dhcp = wm.getDhcpInfo();
+                if (dhcp.gateway != 0) {
+                    return Formatter.formatIpAddress(dhcp.gateway);
+                }
             }
         } catch (Exception ignored) {
             return "ERROR";
@@ -149,10 +161,9 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             if (wifi != null) {
                 if (!wifi.isWifiEnabled()) {
-                    wifi.setWifiEnabled(tostate);
+                    wifi.setWifiEnabled(true);
                     logger.log("WiFi Turned On", "wificonnection");
                 }
-                wifi.startScan();
             }
         } else {
             if (!isPowerConnected(context))
@@ -161,7 +172,10 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     }
 
     private void delayedWiFiOff(final Context context){
-        new CountDownTimer(5000, 1000) {
+        if (wifiCountDown != null){
+            wifiCountDown.cancel();
+        }
+        wifiCountDown = new CountDownTimer(5000, 1000) {
             public void onTick(long millisUntilFinished) {
                 if (isPowerConnected(context)) {
                     logger.log("Power connected during wifi off timer", "log");
@@ -174,11 +188,35 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                     if (!isPowerConnected(context)) {
                         wifi.setWifiEnabled(false);
                         logger.log("WiFi Turned Off", "wificonnection");
+                        setWakeLock(context,false);
                     }
                 }
             }
 
         }.start();
+    }
+
+    private void setWakeLock (Context context,boolean wake){
+        String WLTAG = TAG + ":WakeLock";
+
+        if (wake) {
+            //private static CountDownTimer wakeCountDown;
+            PowerManager powerManager = (PowerManager) context.getApplicationContext().getSystemService(Context.POWER_SERVICE);
+            if (powerManager != null) {
+                wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, WLTAG);
+                // 5 Mins timeout
+                wakeLock.acquire(5*60*1000L);
+            }
+
+        } else{
+            if (wakeLock != null) {
+                wakeLock.release();
+                logger.log("Released wakelock", "");
+                Log.d(WLTAG,"Released Wakelock");
+            }
+
+        }
+
     }
 
     private void requestServiceState(Context context,boolean reqState, String type){
@@ -202,7 +240,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         }
 
         if (reqState != HackerService.running){
-            if (type == "wifi") {
+            if (type.equals("wifi")) {
                 toggleUSB(context);
             } else {
                 updateServiceState(context, reqState, gatewayIP, usb);
@@ -230,19 +268,21 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     }
 
     private boolean isWifiConnected(Context context) {
+        if (wifiConnected != null)
+            return wifiConnected;
         try {
-            ConnectivityManager manager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = null;
+            ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             if (manager != null) {
-                networkInfo = manager.getActiveNetworkInfo();
+                NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+                logger.log("isWiFiConnected got Connectivity Manager");
+                wifiConnected = (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) && networkInfo.isConnected();
+            } else {
+                logger.log("isWiFiConnected failed to get Connectivity Manager");
             }
-            return networkInfo != null
-                    && networkInfo.getType() == ConnectivityManager.TYPE_WIFI
-                    && networkInfo.isConnected();
         } catch (Exception e) {
             Log.e("WIFI CONNECTION", "Error checking WiFi := " + e);
-            return false;
         }
+        return wifiConnected != null && wifiConnected;
     }
 
     private void toggleUSB(Context context){
@@ -255,6 +295,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         // Alternate method
         SharedPreferences sp = context.getApplicationContext().getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         if (sp.getBoolean(SHARED_PREF_KEY_USB_CONTROL_TYPE,false)){
+            logger.log("Toggling USB - Alternative","log");
             cmdOne = new String[]{"su", "-c", "settings", "put", "global", "adb_enabled", "0"};
             cmdTwo = new String[]{"su", "-c", "settings", "put", "global", "adb_enabled", "1"};
         }
@@ -269,7 +310,37 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             e.printStackTrace();
             Log.e("USB CONN","ERROR", e);
         }
+        checkServiceReminder(context,0);
     }
+
+    /*
+    // Keep this here in case anyone has issues waking device on power
+    private void wakeDevice(final Context context){
+        logger.log("Waking Device","log");
+
+        wakeCountDown = new CountDownTimer(30000, 5000) {
+            public void onTick(long millisUntilFinished) {
+                // NB Root is required!
+                if (isWifiConnected(context) || HackerService.running)
+                    cancel();
+                String[] cmdWake = {"su", "-c", "input", "keyevent", "KEYCODE_WAKEUP"};
+                try {
+                    Process p = Runtime.getRuntime().exec(cmdWake);
+                    p.waitFor();
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                    Log.e("WAKE DEVICE","ERROR", e);
+                }
+            }
+            public void onFinish() {
+                checkServiceReminder(context,0);
+            }
+
+        }.start();
+
+    }
+
+     */
 
     private void resetAAService(Context context){
         logger.log("Reset Service Requested","aaservice");
@@ -300,7 +371,12 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             Intent intent = new Intent();
             intent.setAction(ACTION_CHECK_SERVICE_REMINDER);
             intent.putExtra(SERVICE_REMINDER_EXTRA, count + 1);
-            PendingIntent piServiceReminder = PendingIntent.getBroadcast(context, 0, intent, 0);
+            PendingIntent piServiceReminder;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                piServiceReminder = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+            } else {
+                piServiceReminder = PendingIntent.getBroadcast(context, 0, intent, 0);
+            }
             if (alarmManager != null) {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 30000, piServiceReminder);
             }
