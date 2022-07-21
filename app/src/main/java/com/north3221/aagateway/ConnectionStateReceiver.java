@@ -30,6 +30,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     private static CountDownTimer wifiCountDown;
     private static PowerManager.WakeLock wakeLock;
     private static Boolean wifiConnected;
+    private static UsbAccessory usbAccessory;
 
     public static final String
             ACTION_USB_ACCESSORY_ATTACHED = "com.north3221.aagateway.ACTION_USB_ACCESSORY_ATTACHED",
@@ -55,7 +56,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 wifiConnectivityAction(context, intent);
                 break;
             case ACTION_USB_ACCESSORY_ATTACHED:
-                usbDeviceAttachedAction(context);
+                usbDeviceAttachedAction(context, intent);
                 break;
             case ACTION_USB_ACCESSORY_DETACHED:
                 device = "Android Auto Device";
@@ -115,8 +116,10 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         return "NO IP";
     }
 
-    public void usbDeviceAttachedAction(Context context){
+    public void usbDeviceAttachedAction(Context context, Intent usbIntent){
         logger.log("USB Android Auto Device connected","usbconnection");
+        if (usbIntent.hasExtra(UsbManager.EXTRA_ACCESSORY))
+            usbAccessory = usbIntent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
         if (isWifiConnected(context)) {
             requestServiceState(context, true, "usb");
         } else {
@@ -130,6 +133,9 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     }
 
     private UsbAccessory getUsbAccessory (Context context){
+        if (usbAccessory != null)
+            return usbAccessory;
+
         UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         if (manager != null) {
             UsbAccessory[] accessoryList = manager.getAccessoryList();
@@ -146,6 +152,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
 
     private void usbDeviceDetachedAction(Context context, String device) {
         logger.log("USB "+ device + " Disconnected", "usbconnection");
+        usbAccessory = null;
         requestServiceState(context, false, "usb");
         setWifi(context, false);
 

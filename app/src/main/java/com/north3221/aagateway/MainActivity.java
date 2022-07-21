@@ -95,10 +95,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onNewIntent(Intent paramIntent) {
         Log.i(TAG, "Got new intent: " + paramIntent);
         Intent usbIntent;
-        if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(paramIntent.getAction()) && paramIntent.getParcelableExtra("accessory") != null){
+        if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(paramIntent.getAction()) && paramIntent.hasExtra(UsbManager.EXTRA_ACCESSORY)){
             usbIntent = new Intent(ACTION_USB_ACCESSORY_ATTACHED);
             ComponentName componentName = new ComponentName(this,ConnectionStateReceiver.class);
-            usbIntent.putExtra("accessory", (UsbAccessory) paramIntent.getParcelableExtra("accessory"));
+            usbIntent.putExtra(UsbManager.EXTRA_ACCESSORY, (UsbAccessory) paramIntent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
         } else {
          usbIntent = new Intent(ACTION_USB_ACCESSORY_DETACHED);
         }

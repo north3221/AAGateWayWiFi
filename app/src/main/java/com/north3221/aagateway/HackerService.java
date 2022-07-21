@@ -47,6 +47,7 @@ public class HackerService extends Service {
     private AAlogger logger;
     private static String tvName = "aaservice";
 
+    private static Socket phoneTcpSocket;
     private static OutputStream socketoutput;
     private static DataInputStream socketinput;
     public static boolean running=false;
@@ -157,15 +158,16 @@ public class HackerService extends Service {
 
                 Log.d(TAG, "tcp - connecting to phone" );
                 logger.log("TCP polling thread -  Opening connection to phone", "log");
-                Socket socket = new Socket();
-                socket.setSoTimeout(5000);
-                socket.connect(new InetSocketAddress(gatewayIP, 5277), 500);
+                phoneTcpSocket = new Socket();
+                phoneTcpSocket.setSoTimeout(5000);
+                phoneTcpSocket.connect(new InetSocketAddress(gatewayIP, 5277), 500);
                 Log.d(TAG, "tcp - connected");
                 logger.log("TCP polling thread - Opening Socket to phone", "log");
-                socketoutput = socket.getOutputStream();
-                socketinput = new DataInputStream(socket.getInputStream());
+                socketoutput = phoneTcpSocket.getOutputStream();
+                socketinput = new DataInputStream(phoneTcpSocket.getInputStream());
                 socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
                 socketoutput.flush();
+
                 byte[] recv = new byte[12];
                 socketinput.read(recv);
                 Log.d(TAG, "tcp - recv from phone " + bytesToHex(recv));
@@ -285,18 +287,31 @@ public class HackerService extends Service {
 
     @Override
     public void onDestroy() {
-        running=false;
-        mNotificationManager.cancelAll();
-        if (mFileDescriptor!=null) {
+        // Attempt to close phone connection gracefully
+        if (phoneTcpSocket != null) {
             try {
-                mFileDescriptor.close();
+                socketoutput.close();
+                socketinput.close();
+                phoneTcpSocket.close();
+            } catch (IOException e) {
+                Log.d(TAG, "error closing phone tcp socket " + e.getMessage());
+                logger.log("error closing phone tcp socket",tvName);
+            }
+        }
+        // Attempt to close usb connection gracefully
+        if (mFileDescriptor != null) {
+            try {
                 phoneInputStream.close();
                 phoneOutputStream.close();
+                mFileDescriptor.close();
             } catch (IOException e) {
                 Log.d(TAG, "error closing usb " + e.getMessage());
                 logger.log("error closing usb",tvName);
             }
         }
+
+        mNotificationManager.cancelAll();
+        running=false;
         Log.d(TAG,"service destroyed");
         logger.log("Service Destroyed", "log");
         resetService();
