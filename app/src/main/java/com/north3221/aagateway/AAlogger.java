@@ -18,7 +18,7 @@ class AAlogger {
     public static final String
             SHARED_PREF_KEY_LOG = "LOG",
             LOGFILE = "sdcard/aagatewaylog.txt";
-    private Context loggerContext;
+    private final Context loggerContext;
 
     public AAlogger(Context context){
         loggerContext = context;
@@ -31,11 +31,11 @@ class AAlogger {
             case 3:
                 log(message);
             case 2:
-                if (tvName != "log"){
+                if (!tvName.equals("log")){
                     updateTextView(message, "log");
                 }
             case 1:
-                if (tvName == "log" && loggingLevel() == 1){
+                if (tvName.equals("log") && loggingLevel() == 1){
                     break;
                 }
                 updateTextView(message,tvName);
@@ -54,7 +54,7 @@ class AAlogger {
         int id = loggerContext.getResources().getIdentifier(tvName, "id", loggerContext.getPackageName());
         Log.d(TAG, "Updating Shared Preferences for tvName:= " + tvName + " ID:= " + id);
         SharedPreferences sp = loggerContext.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
-        if (tvName == "log") {
+        if (tvName.equals("log")) {
             String timeStamp = new SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
             message = timeStamp + ":" + message + "\n" + sp.getString(String.valueOf(id), "");
         }

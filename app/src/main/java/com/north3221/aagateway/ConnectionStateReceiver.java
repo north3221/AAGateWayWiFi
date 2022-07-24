@@ -65,6 +65,9 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 break;
             case Intent.ACTION_POWER_CONNECTED:
                 logger.log("USB Power Connected", "usbconnection");
+                if (powerCountDown != null){
+                    powerCountDown.cancel();
+                }
                 setWakeLock(context,true);
                 setWifi(context, true);
                 break;
@@ -150,8 +153,8 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         return null;
     }
 
-    private void usbDeviceDetachedAction(Context context, String device) {
-        logger.log("USB " + device + " Disconnected", "usbconnection");
+    private void usbDeviceDetachedAction(final Context context, final String device) {
+        logger.log("USB " + device + " Disconnected timer started", "usbconnection");
         usbAccessory = null;
 
         if (powerCountDown != null){
@@ -160,16 +163,21 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         powerCountDown = new CountDownTimer(3000, 1000) {
             public void onTick(long millisUntilFinished) {
                 if (isPowerConnected(context)) {
-                    logger.log("Power connected during power off timer", "log");
-                    logger.log("USB " + device + " Disconnected - Stopped", "usbconnection");
+                    logger.log("USB Power connected during power off timer", "log");
+                    logger.log("USB " + device + " Connected", "usbconnection");
                     cancel();
                 }
             }
             public void onFinish() {
-                requestServiceState(context, false, "usb");
-                setWifi(context, false);
-                setWakeLock(context,false);
-                logger.log("Power disconnected -  timer Finished", "usbconnection");
+                if (!isPowerConnected(context)) {
+                    requestServiceState(context, false, "usb");
+                    setWifi(context, false);
+                    setWakeLock(context, false);
+                    logger.log("USB Power disconnected", "usbconnection");
+                } else {
+                    logger.log("USB Power connected during power off timer", "log");
+                    logger.log("USB " + device + " Connected", "usbconnection");
+                }
             }
 
         }.start();

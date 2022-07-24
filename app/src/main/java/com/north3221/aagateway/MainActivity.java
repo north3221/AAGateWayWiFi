@@ -13,7 +13,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.os.Build;
@@ -100,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             usbIntent = new Intent(ACTION_USB_ACCESSORY_ATTACHED);
             ComponentName componentName = new ComponentName(this,ConnectionStateReceiver.class);
             usbIntent.setComponent(componentName);
-            usbIntent.putExtra(UsbManager.EXTRA_ACCESSORY, (UsbAccessory) paramIntent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
+            usbIntent.putExtra(UsbManager.EXTRA_ACCESSORY, paramIntent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
         } else {
          usbIntent = new Intent(ACTION_USB_ACCESSORY_DETACHED);
         }
@@ -271,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
                 int id = Integer.parseInt(key);
                 Log.d(TAG, "updating text view id:= " + id);
                 if (findViewById(id) instanceof TextView) {
-                    updateTextView(findViewById(id));
+                    updateTextView((TextView) findViewById(id));
                 }
             } catch (NumberFormatException e) {
                 Log.d(TAG, "None Automated Shared Preferences update Key:= " + key);

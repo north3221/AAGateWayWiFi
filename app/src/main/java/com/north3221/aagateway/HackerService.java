@@ -33,10 +33,6 @@ import static android.app.NotificationManager.IMPORTANCE_HIGH;
 import static com.north3221.aagateway.ConnectionStateReceiver.ACTION_RESET_AASERVICE;
 import static java.lang.Thread.sleep;
 
-/**
- * Created by Emil on 25/03/2018.
- */
-
 public class HackerService extends Service {
     private static final String TAG = "AAGateWay";
     private NotificationManager mNotificationManager;
@@ -53,7 +49,7 @@ public class HackerService extends Service {
     private static DataInputStream socketinput;
     public static boolean running=false;
     private boolean localCompleted,usbCompleted;
-    byte [] readbuffer=new byte[16384];
+    byte [] readbuffer = new byte[16384];
 
     @Override
     public IBinder onBind(Intent intent) {
