@@ -1,4 +1,4 @@
-# AAGateWay Master Wifi Hotspot (Root Required)
+# AAGateWay Wireless Android Auto using Master Wifi Hotspot (Root required on slave)
 
 I have reworked the AAGateway to wait for USB adapter AND connection to WiFi.  
 This only works running on the slave and connecting to master wifi hotspot
