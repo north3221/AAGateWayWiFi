@@ -31,6 +31,7 @@ import java.util.Arrays;
 
 import static android.app.NotificationManager.IMPORTANCE_HIGH;
 import static com.north3221.aagateway.ConnectionStateReceiver.ACTION_RESET_AASERVICE;
+import static java.lang.Thread.sleep;
 
 /**
  * Created by Emil on 25/03/2018.
@@ -45,7 +46,7 @@ public class HackerService extends Service {
     private FileOutputStream phoneOutputStream;
     private FileInputStream phoneInputStream;
     private AAlogger logger;
-    private static String tvName = "aaservice";
+    private static final String tvName = "aaservice";
 
     private static Socket phoneTcpSocket;
     private static OutputStream socketoutput;
@@ -72,7 +73,7 @@ public class HackerService extends Service {
 
         String CHANNEL_ONE_ID = "com.north3221.aagateway";
         String CHANNEL_ONE_NAME = "Channel One";
-        NotificationChannel notificationChannel = null;
+        NotificationChannel notificationChannel;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             notificationChannel = new NotificationChannel(CHANNEL_ONE_ID,
                     CHANNEL_ONE_NAME, IMPORTANCE_HIGH);
@@ -81,7 +82,9 @@ public class HackerService extends Service {
             notificationChannel.setShowBadge(true);
             notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(notificationChannel);
+            if (manager != null) {
+                manager.createNotificationChannel(notificationChannel);
+            }
         }
 
 
@@ -109,10 +112,12 @@ public class HackerService extends Service {
         Log.d(TAG,"Service Started");
         logger.log("Started",tvName);
         super.onStartCommand(intent, flags, startId);
-        UsbAccessory mAccessory = (UsbAccessory) intent.getParcelableExtra("accessory");
+        UsbAccessory mAccessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
         gatewayIP = intent.getStringExtra("gwip");
         UsbManager mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        mFileDescriptor = mUsbManager.openAccessory(mAccessory);
+        if (mUsbManager != null) {
+            mFileDescriptor = mUsbManager.openAccessory(mAccessory);
+        }
         if (mFileDescriptor != null) {
             FileDescriptor fd = mFileDescriptor.getFileDescriptor();
             phoneInputStream = new FileInputStream(fd);
@@ -185,7 +190,7 @@ public class HackerService extends Service {
                 Log.d(TAG, "tcp - waiting for usb");
             while (!usbCompleted && running) {
                 try {
-                    Thread.sleep(10);
+                    sleep(10);
                 } catch (InterruptedException e) {
                     Log.e(TAG, "tcp - error sleeping "+e.getMessage());
                     logger.log("TCP error sleeping = " + e.getMessage(), "log");
@@ -195,7 +200,7 @@ public class HackerService extends Service {
             while (running)
             {
                 try {
-                    getLocalmessage(false);
+                    getLocalmessage();
 
                 } catch (Exception e) {
                     Log.e(TAG,"tcp - in main loop "+e.getMessage());
@@ -217,7 +222,7 @@ public class HackerService extends Service {
             Looper.prepare();
             Log.d(TAG,"usb - run");
 
-            byte buf [] = new byte[16384];
+            byte[] buf = new byte[16384];
             int x;
 
             try {
@@ -239,7 +244,7 @@ public class HackerService extends Service {
             while (!localCompleted && running) {
                 i++;
                 try {
-                    Thread.sleep(100);
+                    sleep(100);
                     if ((i % 10) == 0) {
                         logger.log("usb waiting for local count " + i,tvName);
                     }
@@ -264,9 +269,9 @@ public class HackerService extends Service {
             Log.d(TAG,"usb - end");
             stopSelf();
         }
-    };
+    }
 
-    private void getLocalmessage(boolean canBeEmpty) throws IOException {
+    private void getLocalmessage() throws IOException {
         int enc_len;
         socketinput.readFully(readbuffer,0,4);
         int pos=4;
@@ -287,6 +292,7 @@ public class HackerService extends Service {
 
     @Override
     public void onDestroy() {
+        running=false;
         // Attempt to close phone connection gracefully
         if (phoneTcpSocket != null) {
             try {
@@ -309,12 +315,10 @@ public class HackerService extends Service {
                 logger.log("error closing usb",tvName);
             }
         }
-
-        mNotificationManager.cancelAll();
-        running=false;
         Log.d(TAG,"service destroyed");
         logger.log("Service Destroyed", "log");
         resetService();
+        mNotificationManager.cancelAll();
     }
 
     private void resetService() {
@@ -331,8 +335,7 @@ public class HackerService extends Service {
             hexChars[j * 2] = hexArray[v >>> 4];
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
-        String aux = new String(hexChars);
-        return aux;
+        return new String(hexChars);
     }
 
 }

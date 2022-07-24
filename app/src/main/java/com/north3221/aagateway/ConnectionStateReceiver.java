@@ -185,10 +185,10 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         if (wifi != null) {
             if (tostate != wifi.isWifiEnabled()){
                 wifi.setWifiEnabled(tostate);
-                logger.log("WiFi Set to " + tostate, "wificonnection");
+                logger.log("WiFi enabled set to " + tostate, "wificonnection");
             }
         }
-        
+
     }
 
     private void setWakeLock (Context context,boolean wake){
@@ -199,7 +199,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             PowerManager powerManager = (PowerManager) context.getApplicationContext().getSystemService(Context.POWER_SERVICE);
             if (powerManager != null) {
                 wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, WLTAG);
-                // 5 Mins timeout
+                // 5 mins timeout
                 wakeLock.acquire(5*60*1000L);
             }
 
@@ -209,7 +209,6 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
                 logger.log("Released wakelock", "");
                 Log.d(WLTAG,"Released Wakelock");
             }
-
         }
 
     }

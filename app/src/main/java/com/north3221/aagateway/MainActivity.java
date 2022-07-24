@@ -40,6 +40,7 @@ import android.widget.Toast;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -98,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
         if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(paramIntent.getAction()) && paramIntent.hasExtra(UsbManager.EXTRA_ACCESSORY)){
             usbIntent = new Intent(ACTION_USB_ACCESSORY_ATTACHED);
             ComponentName componentName = new ComponentName(this,ConnectionStateReceiver.class);
+            usbIntent.setComponent(componentName);
             usbIntent.putExtra(UsbManager.EXTRA_ACCESSORY, (UsbAccessory) paramIntent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
         } else {
          usbIntent = new Intent(ACTION_USB_ACCESSORY_DETACHED);
@@ -235,18 +237,18 @@ public class MainActivity extends AppCompatActivity {
             storageButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    requestStorate();
+                    requestStorage();
                 }
             });
         }
     }
 
-    private void requestStorate(){
+    private void requestStorage(){
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},0);
     }
 
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
             // If request is cancelled, the result arrays are empty.
             if (grantResults.length > 0
@@ -254,8 +256,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
                 startActivity(getIntent());
             } else {
-                Toast.makeText(this,"Unknown permission:= " + grantResults.toString(),Toast.LENGTH_SHORT).show();
-                aalogger.log("Unknown permission:= " + grantResults.toString());
+                Toast.makeText(this,"Unknown permission:= " + Arrays.toString(grantResults),Toast.LENGTH_SHORT).show();
+                aalogger.log("Unknown permission:= " + Arrays.toString(grantResults));
             }
 
         }
@@ -269,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
                 int id = Integer.parseInt(key);
                 Log.d(TAG, "updating text view id:= " + id);
                 if (findViewById(id) instanceof TextView) {
-                    updateTextView((TextView) findViewById(id));
+                    updateTextView(findViewById(id));
                 }
             } catch (NumberFormatException e) {
                 Log.d(TAG, "None Automated Shared Preferences update Key:= " + key);
