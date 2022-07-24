@@ -12,9 +12,9 @@ Shout out to the (couldn't of done this without them):
 You can build it or get it from the [Releases](https://github.com/north3221/AAGateWayWiFi/releases) section and you have to install it on the slave phone.
 
 ## Set up:
-### MASTER
-So you MUST have [Android Auto Head Unit Server running](https://developer.android.com/training/cars/testing#:~:text=You%20only%20need%20to%20enable,server%20(see%20figure%201).) on your Master device  
-You also must have WifI tether on Master device  
+### MASTER (doesn't need to be rooted)
+* You MUST have [Android Auto Head Unit Server running](https://developer.android.com/training/cars/testing#:~:text=You%20only%20need%20to%20enable,server%20(see%20figure%201).) on your Master device (you cna just leave it running) 
+* You also must have WifI tether on Master device, which the slave can connect to  
 NB I use Tasker to automate both of these things i.e. turn on wifi tether when connected to car bluetooth and some screen touches for AA HUS
 
 ### SLAVE
