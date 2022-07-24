@@ -31,7 +31,7 @@ NB I use Tasker to automate both of these things i.e. turn on wifi tether when c
   The app only waits for wifi connection, not specifically your master, hence make sure only one wifi set up
 * Alternative usb toggle is if the standard one doesn't work (see later)
 
-First time you try connecting you will need to allowed root access (TODO add prompt at startup)  
+First time you try connecting you will need to allowed root access (~~TODO add prompt at startup~~ done)  
 NB it wont ask till connected to car and wifi   
 First time it will also prompt do you want to use aawireless for android automotive, say 'always'   
 
