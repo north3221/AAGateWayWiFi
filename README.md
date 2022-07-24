@@ -45,7 +45,7 @@ I've put in an alternate usb toggle option. So change that setting to true and t
 If still fails after that then no idea, sorry. If you can debug it yourself great, raise a pr
 
 NB I an NOT a developer, just a hobbyist who likes to play and would like AA wireless in his car :-)  
-I only have a couple of combinations to try and test this on. Happy to look at issues but be patient I may never get to em, my focus is it working for me, just sharing to try and help others.connect  
+I only have a couple of combinations to try and test this on. Happy to look at issues but be patient I may never get to em, my focus is it working for me, just sharing to try and help others.  
 Please don't start complaining if its not working or I am not responsive to questions or issues
 
 

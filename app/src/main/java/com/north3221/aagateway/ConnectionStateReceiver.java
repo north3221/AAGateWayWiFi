@@ -27,7 +27,7 @@ import java.io.IOException;
 
 public class ConnectionStateReceiver extends BroadcastReceiver {
     private AAlogger logger;
-    private static CountDownTimer wifiCountDown;
+    private static CountDownTimer powerCountDown;
     private static PowerManager.WakeLock wakeLock;
     private static Boolean wifiConnected;
     private static UsbAccessory usbAccessory;
@@ -151,10 +151,28 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     }
 
     private void usbDeviceDetachedAction(Context context, String device) {
-        logger.log("USB "+ device + " Disconnected", "usbconnection");
+        logger.log("USB " + device + " Disconnected", "usbconnection");
         usbAccessory = null;
-        requestServiceState(context, false, "usb");
-        setWifi(context, false);
+
+        if (powerCountDown != null){
+            powerCountDown.cancel();
+        }
+        powerCountDown = new CountDownTimer(3000, 1000) {
+            public void onTick(long millisUntilFinished) {
+                if (isPowerConnected(context)) {
+                    logger.log("Power connected during power off timer", "log");
+                    logger.log("USB " + device + " Disconnected - Stopped", "usbconnection");
+                    cancel();
+                }
+            }
+            public void onFinish() {
+                requestServiceState(context, false, "usb");
+                setWifi(context, false);
+                setWakeLock(context,false);
+                logger.log("Power disconnected -  timer Finished", "usbconnection");
+            }
+
+        }.start();
 
     }
 
@@ -163,44 +181,14 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         if (!sp.getBoolean(SHARED_PREF_KEY_WIFI_CONTROL,true)){
             return;
         }
-
-        if (tostate) {
-            WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            if (wifi != null) {
-                if (!wifi.isWifiEnabled()) {
-                    wifi.setWifiEnabled(true);
-                    logger.log("WiFi Turned On", "wificonnection");
-                }
+        WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (wifi != null) {
+            if (tostate != wifi.isWifiEnabled()){
+                wifi.setWifiEnabled(tostate);
+                logger.log("WiFi Set to " + tostate, "wificonnection");
             }
-        } else {
-            if (!isPowerConnected(context))
-                delayedWiFiOff(context);
         }
-    }
-
-    private void delayedWiFiOff(final Context context){
-        if (wifiCountDown != null){
-            wifiCountDown.cancel();
-        }
-        wifiCountDown = new CountDownTimer(5000, 1000) {
-            public void onTick(long millisUntilFinished) {
-                if (isPowerConnected(context)) {
-                    logger.log("Power connected during wifi off timer", "log");
-                    cancel();
-                }
-            }
-            public void onFinish() {
-                WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-                if (wifi != null) {
-                    if (!isPowerConnected(context)) {
-                        wifi.setWifiEnabled(false);
-                        logger.log("WiFi Turned Off", "wificonnection");
-                        setWakeLock(context,false);
-                    }
-                }
-            }
-
-        }.start();
+        
     }
 
     private void setWakeLock (Context context,boolean wake){
