@@ -3,6 +3,7 @@ package com.north3221.aagateway;
 import static com.north3221.aagateway.MainActivity.SHARED_PREF_NAME;
 import static com.north3221.aagateway.MainActivity.TAG;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -31,6 +32,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     private static PowerManager.WakeLock wakeLock;
     private static Boolean wifiConnected;
     private static UsbAccessory usbAccessory;
+    private static final int intAlarmCode = 23965;
 
     public static final String
             ACTION_USB_ACCESSORY_ATTACHED = "com.north3221.aagateway.ACTION_USB_ACCESSORY_ATTACHED",
@@ -86,19 +88,9 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
     private void wifiConnectivityAction(Context context, Intent intent){
         NetworkInfo ni = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
         if (ni != null && ni.getType() == ConnectivityManager.TYPE_WIFI) {
-            if (ni.isConnected()) {
-                logger.log("Wifi Connected", "wificonnection");
-                wifiConnected = true;
-                if (isUsbAttached(context)) {
-                    requestServiceState(context, true, "wifi");
-                } else {
-                    logger.log("Waiting on USB", "aaservice");
-                }
-            } else {
-                logger.log("Wifi Disconnected", "wificonnection");
-                wifiConnected = false;
-                requestServiceState(context, false, "wifi");
-            }
+            wifiConnected = ni.isConnected();
+            logger.log("Wifi Connected:= " + wifiConnected.toString(), "wificonnection");
+            requestServiceState(context, wifiConnected, "wifi");
         }
 
     }
@@ -121,13 +113,9 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
 
     public void usbDeviceAttachedAction(Context context, Intent usbIntent){
         logger.log("USB Android Auto Device connected","usbconnection");
-        if (usbIntent.hasExtra(UsbManager.EXTRA_ACCESSORY))
+        if (usbIntent.hasExtra(UsbManager.EXTRA_ACCESSORY)) {
             usbAccessory = usbIntent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-        if (isWifiConnected(context)) {
             requestServiceState(context, true, "usb");
-        } else {
-            if (!HackerService.running)
-                logger.log("Waiting on WiFi", "aaservice");
         }
     }
 
@@ -160,7 +148,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         if (powerCountDown != null){
             powerCountDown.cancel();
         }
-        powerCountDown = new CountDownTimer(3000, 1000) {
+        powerCountDown = new CountDownTimer(3000, 500) {
             public void onTick(long millisUntilFinished) {
                 if (isPowerConnected(context)) {
                     logger.log("USB Power connected during power off timer", "log");
@@ -226,17 +214,21 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         String gatewayIP = getGatewayIP(context);
         logger.log("Requested service: " + reqState + " - Current state: " + HackerService.running, "log");
         logger.log("Gateway IP: " + gatewayIP + " - USB attached : " + isUsbAttached(context),"log");
-        if (reqState) {
-            if (!(gatewayIP.length() > 5)) {
-                if (!HackerService.running)
-                    logger.log("Cant start Service (no gw ip)", "aaservice");
-                checkServiceReminder(context, 0);
+        // If requested running and its not, perform checks see if we can
+        if (reqState && !HackerService.running) {
+            if (type.equals("wifi") && !isUsbAttached(context)) {
+                logger.log("Waiting on USB", "aaservice");
                 return;
             }
+            if (!(gatewayIP.length() > 5)) {
+                logger.log("Cant start Service (no gw ip)", "aaservice");
+            }
             if (usb == null){
-                if (!HackerService.running)
-                    logger.log("Cant start Service (no usb)", "aaservice");
-                checkServiceReminder(context, 0);
+                logger.log("Cant start Service (no usb)", "aaservice");
+                return;
+            }
+            if (type.equals("usb") && !isWifiConnected(context)) {
+                logger.log("Waiting on WiFi", "aaservice");
                 return;
             }
         }
@@ -265,6 +257,7 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
         } else {
             logger.log("Stopping Service", "log");
             context.stopService(hsIntent);
+            cancelServiceReminder(context);
         }
 
     }
@@ -312,7 +305,6 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
             e.printStackTrace();
             Log.e("USB CONN","ERROR", e);
         }
-        checkServiceReminder(context,0);
     }
 
     /*
@@ -355,34 +347,64 @@ public class ConnectionStateReceiver extends BroadcastReceiver {
 
     private boolean isPowerConnected(Context context) {
         Intent intent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+        int plugged = 0;
+        if (intent != null) plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
         return plugged == BatteryManager.BATTERY_PLUGGED_AC || plugged == BatteryManager.BATTERY_PLUGGED_USB;
     }
 
     private void checkServiceReminderAction(Context context, Intent intent){
         int count = intent.getIntExtra(SERVICE_REMINDER_EXTRA,0);
-        if (isWifiConnected(context) && isUsbAttached(context) && !HackerService.running && count < 10){
+        if (isWifiConnected(context) && isUsbAttached(context) && !HackerService.running){
+            cancelServiceReminder(context);
             toggleUSB(context);
-            checkServiceReminder(context,count);
+        } else {
+            if (count < 3) checkServiceReminder(context, count);
         }
 
     }
     private void checkServiceReminder(Context context, int count) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Context.ALARM_SERVICE);
-            Intent intent = new Intent();
-            intent.setAction(ACTION_CHECK_SERVICE_REMINDER);
-            intent.putExtra(SERVICE_REMINDER_EXTRA, count + 1);
+            Intent ri = createReminderIntent();
+            ri.putExtra(SERVICE_REMINDER_EXTRA, count + 1);
             PendingIntent piServiceReminder;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                piServiceReminder = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-            } else {
-                piServiceReminder = PendingIntent.getBroadcast(context, 0, intent, 0);
-            }
+            piServiceReminder = createServiceReminderPendingIntent(context, ri);
+
             if (alarmManager != null) {
+                piServiceReminder.cancel();
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 30000, piServiceReminder);
+                alarmManager.cancel(piServiceReminder);
             }
         }
     }
+
+    private void cancelServiceReminder(Context context){
+        AlarmManager alarmManager = (AlarmManager) context.getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+        PendingIntent pi = createServiceReminderPendingIntent(context);
+        pi.cancel();
+        if (alarmManager != null) {
+            alarmManager.cancel(pi);
+        }
+    }
+
+    private Intent createReminderIntent(){
+        Intent intent = new Intent();
+        intent.setAction(ACTION_CHECK_SERVICE_REMINDER);
+        return intent;
+    }
+
+    private PendingIntent createServiceReminderPendingIntent(Context context){
+        return createServiceReminderPendingIntent(context,createReminderIntent());
+    }
+
+    @SuppressLint("UnspecifiedImmutableFlag")
+    private PendingIntent createServiceReminderPendingIntent(Context context, Intent reminderIntent){
+        PendingIntent pi;
+        pi = PendingIntent.getBroadcast(context,intAlarmCode,reminderIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+        return pi;
+    }
+
+
+
 
 }

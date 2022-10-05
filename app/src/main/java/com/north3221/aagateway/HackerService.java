@@ -288,7 +288,6 @@ public class HackerService extends Service {
 
     @Override
     public void onDestroy() {
-        running=false;
         // Attempt to close phone connection gracefully
         if (phoneTcpSocket != null) {
             try {
@@ -298,6 +297,24 @@ public class HackerService extends Service {
             } catch (IOException e) {
                 Log.d(TAG, "error closing phone tcp socket " + e.getMessage());
                 logger.log("error closing phone tcp socket",tvName);
+            }
+        } else {
+            // If phone socket not open, going to try connect and close it to make it graceful
+            try {
+                phoneTcpSocket = new Socket();
+                phoneTcpSocket.setSoTimeout(5000);
+                phoneTcpSocket.connect(new InetSocketAddress(gatewayIP, 5277), 500);
+                socketoutput = phoneTcpSocket.getOutputStream();
+                socketinput = new DataInputStream(phoneTcpSocket.getInputStream());
+                socketoutput.write(new byte[]{0, 3, 0, 6, 0, 1, 0, 1, 0, 2});
+                socketoutput.flush();
+                socketoutput.close();
+                socketinput.close();
+                phoneTcpSocket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.d(TAG, "error trying to clean up tcp socket " + e.getMessage());
+                logger.log("error trying to clean up tcp socket",tvName);
             }
         }
         // Attempt to close usb connection gracefully
@@ -315,6 +332,7 @@ public class HackerService extends Service {
         logger.log("Service Destroyed", "log");
         resetService();
         mNotificationManager.cancelAll();
+        running=false;
     }
 
     private void resetService() {
